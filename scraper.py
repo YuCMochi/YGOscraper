@@ -9,7 +9,7 @@ import os
 import argparse
 import sys
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 import aiohttp
