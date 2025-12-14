@@ -2,8 +2,7 @@ __pycache__/
 *.pyc
 .env
 product_images/
-*.csv
 .DS_Store
 .venv/
 *.log
-cart.json
+data/

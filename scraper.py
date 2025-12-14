@@ -224,7 +224,7 @@ class RutenScraper:
 async def main_async():
     # 從 cart.json 讀取購物車資訊
     try:
-        with open('cart.json', 'r', encoding='utf-8') as f:
+        with open('data/cart.json', 'r', encoding='utf-8') as f:
             cart_data = json.load(f)
         shopping_cart = cart_data.get('shopping_cart', [])
         if not shopping_cart:
@@ -261,9 +261,12 @@ async def main_async():
             
             all_products_list.extend(products)
 
+    # 確保 'data' 目錄存在
+    os.makedirs('data', exist_ok=True)
+    
     # 儲存所有資料到單一檔案
     if all_products_list:
-        output_file = f"ruten_all_cards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        output_file = f"data/ruten_all_cards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         scraper.save_data(all_products_list, output_file)
         print(f"\n爬蟲完成！所有資料已儲存至：{output_file}")
     else:

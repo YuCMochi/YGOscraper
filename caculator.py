@@ -3,8 +3,9 @@ import glob
 import pandas as pd
 import pulp
 import datetime
+import os
 
-def load_shopping_cart(cart_path='cart.json'):
+def load_shopping_cart(cart_path='data/cart.json'):
     """從 cart.json 讀取購物車需求"""
     print(f"從 {cart_path} 載入購物車...")
     with open(cart_path, 'r', encoding='utf-8') as f:
@@ -25,9 +26,9 @@ def load_shopping_cart(cart_path='cart.json'):
 def load_market_data(needed_cards):
     """從 CSV 檔案讀取市場上的卡片資訊"""
     print("\n正在讀取市場資料...")
-    csv_files = glob.glob('C_ruten*.csv')
+    csv_files = glob.glob('data/C_ruten*.csv')
     if not csv_files:
-        print("錯誤：在根目錄下找不到任何 'C_ruten' 開頭的 CSV 檔案！")
+        print("錯誤：在 'data' 目錄下找不到任何 'C_ruten' 開頭的 CSV 檔案！")
         return None
     
     print(f"找到以下檔案: {', '.join(csv_files)}")
@@ -108,7 +109,7 @@ def solve_best_combination(data, needed_cards, shipping_fee):
     # --- 求解 ---
     # 動態生成檔名，例如：20231214_152024.log
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"{timestamp}.log"
+    log_filename = f"data/{timestamp}.log"
     
     # 將問題寫入 .log 檔案以供除錯
     print(f"將 PuLP 問題寫入至 {log_filename}...")
@@ -182,6 +183,9 @@ def solve_best_combination(data, needed_cards, shipping_fee):
 def main():
     """主執行函數"""
     try:
+        # 確保 'data' 目錄存在
+        os.makedirs('data', exist_ok=True)
+        
         needed_cards, shipping_fee = load_shopping_cart()
         market_data = load_market_data(needed_cards)
         
@@ -189,7 +193,7 @@ def main():
             solve_best_combination(market_data, needed_cards, shipping_fee)
             
     except FileNotFoundError as e:
-        print(f"\n錯誤：找不到檔案 {e.filename}。請確認 'cart.json' 是否存在。")
+        print(f"\n錯誤：找不到檔案 {e.filename}。請確認 'cart.json' 是否存在於 'data' 目錄中。")
     except Exception as e:
         print(f"\n發生預期外的錯誤: {e}")
         import traceback

@@ -4,11 +4,14 @@ import glob
 import os
 
 def clean_latest_ruten_csv():
+    # 確保 'data' 目錄存在
+    os.makedirs('data', exist_ok=True)
+
     # 1. 尋找最新的 ruten*.csv 檔案
     try:
-        list_of_files = glob.glob('ruten*.csv')
+        list_of_files = glob.glob('data/ruten*.csv')
         if not list_of_files:
-            print("未找到以 'ruten' 開頭的 CSV 檔案。")
+            print("在 'data' 目錄中未找到以 'ruten' 開頭的 CSV 檔案。")
             return
         latest_file = max(list_of_files, key=os.path.getmtime)
         print(f"正在處理最新的檔案: {latest_file}")
@@ -18,7 +21,7 @@ def clean_latest_ruten_csv():
 
     # 2. 從 cart.json 讀取設定
     try:
-        with open('cart.json', 'r', encoding='utf-8') as f:
+        with open('data/cart.json', 'r', encoding='utf-8') as f:
             config = json.load(f)
         global_settings = config.get('global_settings', {})
         # 讀取排除關鍵字
@@ -38,7 +41,7 @@ def clean_latest_ruten_csv():
         else:
             print(f"已載入 {len(all_target_ids)} 個目標卡號。")
     except FileNotFoundError:
-        print("錯誤: 找不到 cart.json。")
+        print("錯誤: 找不到 data/cart.json。")
         return
     except json.JSONDecodeError:
         print("錯誤: 無法解析 cart.json。")
@@ -94,7 +97,7 @@ def clean_latest_ruten_csv():
         return
         
     # 4. 寫入新檔案並（選擇性）移除舊檔案
-    output_filename = f"C_{os.path.basename(latest_file)}"
+    output_filename = os.path.join('data', f"C_{os.path.basename(latest_file)}")
     
     try:
         with open(output_filename, 'w', encoding='utf-8', newline='') as outfile:
