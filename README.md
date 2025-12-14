@@ -1,23 +1,44 @@
-# 遊戲王卡片即時比價工具 (Ruten Edition)
+# 遊戲王卡片智慧比價工具 (Ruten Edition)
 
-> 專門搜尋「露天拍賣」資料、使用非公開 API，採用貪心演算法+局部搜索優化找出最低總價組合。  
-> 開發環境：Python + JavaScript 前後端分離架構。
-
----
-
-## 專案目標
-
-1. **即時比價**：使用者輸入卡片名稱 → 立即向露天 API 取回最新商品。
-2. **智慧過濾**：自動排除標題不符、價格異常、缺貨等「錯誤商品」。
-3. **最佳組合**：使用兩階段演算法（貪心初始解+局部搜索優化）計算「指定張數」的最低總價（含運費）。
-4. **互動體驗**：  
-   - 前端使用 SQL.js 動態載入卡片資料庫，支援模糊搜尋。  
-   - 使用者可將多種卡片加入購物車並指定數量。  
-5. **一鍵比價**：點擊「優化」按鈕自動執行爬蟲、資料清理和最佳組合計算。
+> 專門針對「露天拍賣」資料，採用**高效啟發式演算法（貪心 + 局部搜索）**，解決多卡片、多賣家、含運費的最佳採購組合問題。
 
 ---
 
-## 系統架構
+## ✨ 專案亮點與目標 (MVP)
+
+這個專案的核心目標是為組牌玩家提供一個比手動計算更省時、更便宜的採購方案。
+
+1.  **即時資料擷取 (Scraping)**
+    * **資料源**：鎖定露天拍賣 API (非公開)。
+    * **效率**：支援多卡片並行爬取，大幅縮短等待時間。
+2.  **精準過濾與標準化 (Cleaning)**
+    * 使用卡片編號（`target_id`）作為關鍵字，排除高罕貴度卡或不相關商品，實現**「最低版本優先」**的比價策略。
+    * 自動排除標題不符、價格異常、庫存為零的商品。
+3.  **組合最佳化 (Optimization)**
+    * **核心問題**：解決同時購買多種卡片時，單店運費 (固定成本) 遠高於商品差價的採購難題。
+    * **演算法**：採用 **貪心演算法** 快速生成初始解，接著以 **局部搜索 (Local Search)** 進行迭代優化，在可接受的時間內找到接近全域最佳的最低總價（含固定運費）。
+4.  **本地化與互動體驗 (Local MVP)**
+    * 前端使用輕量級技術，動態載入卡片資料庫 (`cards.cdb`) 進行模糊搜尋。
+    * 使用者可將多種卡片加入購物車並指定數量，透過 `cart.json` 文件將需求傳遞給主控程式。
+
+---
+
+## 💻 核心技術棧
+
+| 模組 | 技術 | 職責說明 |
+| :--- | :--- | :--- |
+| **主控/運算** | Python (3.x) | 負責控制流程、讀取 JSON、協調爬蟲與優化引擎。 |
+| **爬蟲** | Python (`requests`, `aiohttp`) | 採用非同步請求，並行爬取露天商品資料。 |
+| **最佳化** | Python (核心邏輯) | 實現**貪心 + 局部搜索**演算法，計算最低成本。 |
+| **資料庫** | SQL.js / SQLite | 輕量級卡片資料庫 (`cards.cdb`)，用於前端模糊搜尋。 |
+| **前後端** | HTML/JS/CSS | 簡潔的前端界面，用於輸入需求和顯示結果。 |
+
+---
+
+## 系統架構與流程
+
+為了驗證核心邏輯，專案採用**本地端主控制器**模式，而非傳統的客戶端-伺服器架構。
+
 
 ```mermaid
 sequenceDiagram
@@ -27,21 +48,28 @@ sequenceDiagram
     participant 主控制器 (main_controller.py)
     participant 爬蟲模組 (scraper.py)
     participant 資料清理 (clean_csv.py)
-    participant 優化引擎 (card_optimizer.py)
+    participant 優化引擎 (caculator.py)
 
-    使用者->>前端 (HTML/JS/CSS): 搜尋卡片並加入購物車
+    使用者->>前端 (HTML/JS/CSS): 搜尋卡片並加入購物車 (例如 3x灰流麗)
     前端 (HTML/JS/CSS)->>卡片資料庫 (cards.cdb): 載入並查詢卡片資訊
     前端 (HTML/JS/CSS)-->>使用者: 顯示卡片資訊與圖片
     使用者->>前端 (HTML/JS/CSS): 設定購買數量並點擊「優化」
-    前端 (HTML/JS/CSS)->>前端 (HTML/JS/CSS): 將購物車資訊儲存至 cart.json
-    使用者->>主控制器 (main_controller.py): 執行主控制流程
+    前端 (HTML/JS/CSS)->>前端 (HTML/JS/CSS): **輸出購物車需求 cart.json**
+    
+    rect rgb(200, 255, 200)
+    note over 主控制器 (main_controller.py), 優化引擎 (caculator.py): 核心 Python 流程 (本地執行)
     主控制器 (main_controller.py)->>主控制器 (main_controller.py): 讀取 cart.json
-    主控制器 (main_controller.py)->>爬蟲模組 (scraper.py): 並行爬取多種卡片資訊
-    爬蟲模組 (scraper.py)-->>主控制器 (main_controller.py): 返回原始商品資料 (CSV)
-    主控制器 (main_controller.py)->>資料清理 (clean_csv.py): 清理每種卡片的資料
+    
+    主控制器 (main_controller.py)->>爬蟲模組 (scraper.py): **1. 並行爬取多種卡片資訊 (使用 target_ids)**
+    爬蟲模組 (scraper.py)-->>主控制器 (main_controller.py): 返回原始商品資料
+    
+    主控制器 (main_controller.py)->>資料清理 (clean_csv.py): **2. 清理與過濾** (排除關鍵字, 檢查庫存)
     資料清理 (clean_csv.py)-->>主控制器 (main_controller.py): 返回清理後資料
-    主控制器 (main_controller.py)->>優化引擎 (card_optimizer.py): 計算最佳購買組合
-    優化引擎 (card_optimizer.py)->>優化引擎 (card_optimizer.py): 執行貪心算法獲得初始解
-    優化引擎 (card_optimizer.py)->>優化引擎 (card_optimizer.py): 執行局部搜索優化
-    優化引擎 (card_optimizer.py)-->>主控制器 (main_controller.py): 返回最佳購買方案
+    
+    主控制器 (main_controller.py)->>優化引擎 (caculator.py): **3. 演算法求解**
+    優化引擎 (caculator.py)->>優化引擎 (caculator.py): **執行貪心算法** (生成初始解)
+    優化引擎 (caculator.py)->>優化引擎 (caculator.py): **執行局部搜索** (迭代優化)
+    優化引擎 (caculator.py)-->>主控制器 (main_controller.py): 返回最佳購買方案
+    end
+    
     主控制器 (main_controller.py)-->>使用者: 顯示最佳購買組合與總價
