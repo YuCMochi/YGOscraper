@@ -124,15 +124,20 @@ class RutenScraper:
         try:
             remaining_stock = product.get('StockQty', 0) - product.get('SoldQty', 0)
             price_range = product.get('PriceRange', [0])
+            price = int(price_range[0]) if price_range and price_range[0] is not None else 0
+            
+            shipping_cost = product.get('ShippingCost')
+            shipping_cost = int(shipping_cost) if shipping_cost is not None else 0
+
             image_url = product.get('Image', '')
             
             return {
                 '商品ID': product.get('ProdId', ''),
                 '商品名稱': product.get('ProdName', ''),
                 '賣家ID': product.get('SellerId', ''),
-                '價格': int(price_range[0]),
+                '價格': price,
                 '剩餘數量': remaining_stock,
-                '最低運費': int(product.get('ShippingCost', 0)),
+                '最低運費': shipping_cost,
                 '上架時間': product.get('PostTime', ''),
                 '圖片連結': image_url
             }
@@ -140,19 +145,20 @@ class RutenScraper:
             logger.error(f"處理商品資料時發生錯誤：{e}")
             return None
 
-    async def process_products_async(self, keyword: str) -> List[Dict]:
+    async def process_products_async(self, keyword: str, max_pages: int = 999) -> List[Dict]:
         """非同步處理商品資料"""
         all_products = []
         page = 1
         
-        while True:
+        while page <= max_pages:
             try:
                 offset = (page - 1) * ITEMS_PER_PAGE + 1
-                logger.info(f"正在處理第 {page} 頁")
+                logger.info(f"正在處理關鍵字 '{keyword}' 的第 {page} 頁")
                 
                 # 非同步搜尋商品
                 search_result, available_items = await self.search_products_async(keyword, limit=ITEMS_PER_PAGE, offset=offset)
-                if not search_result or 'Rows' not in search_result:
+                if not search_result or 'Rows' not in search_result or not search_result['Rows']:
+                    logger.info(f"關鍵字 '{keyword}' 在第 {page} 頁沒有更多結果了。")
                     break
                 
                 # 獲取商品ID列表
@@ -178,7 +184,7 @@ class RutenScraper:
                 await asyncio.sleep(0.5)  # 減少請求間隔
                 
             except Exception as e:
-                logger.error(f"處理第 {page} 頁時發生錯誤: {e}")
+                logger.error(f"處理關鍵字 '{keyword}' 的第 {page} 頁時發生錯誤: {e}")
                 break
         
         return all_products
@@ -203,47 +209,69 @@ class RutenScraper:
                 '上架時間': 'post_time',
                 '圖片連結': 'image_url'
             })
+
+            # 重新排序欄位，將 'search_card_name' 放在最前面
+            cols = df.columns.tolist()
+            if 'search_card_name' in cols:
+                cols.insert(0, cols.pop(cols.index('search_card_name')))
+                df = df[cols]
+
             df.to_csv(filename, index=False, encoding='utf-8-sig')
             logger.info(f"資料已成功儲存到 {filename}")
         except Exception as e:
             logger.error(f"儲存資料時發生錯誤：{e}")
 
 async def main_async():
-    # 檢查是否有命令列參數
-    if len(sys.argv) > 1:
-        parser = argparse.ArgumentParser(description='露天拍賣商品爬蟲')
-        parser.add_argument('-k', '--keyword', type=str, required=True, help='搜尋關鍵字')
-        parser.add_argument('-o', '--output', type=str, help='輸出檔案名稱（選填）')
-        args = parser.parse_args()
-        keyword, output = args.keyword, args.output
-    else:
-        print("\n=== 露天拍賣商品爬蟲 ===")
-        print("請輸入以下資訊：")
-        while True:
-            keyword = input("\n請輸入搜尋關鍵字：").strip()
-            if keyword:
-                break
-            print("關鍵字不能為空，請重新輸入！")
-        output = input("請輸入輸出檔案名稱（選填，直接按Enter使用預設名稱）：").strip()
-    
+    # 從 cart.json 讀取購物車資訊
+    try:
+        with open('cart.json', 'r', encoding='utf-8') as f:
+            cart_data = json.load(f)
+        shopping_cart = cart_data.get('shopping_cart', [])
+        if not shopping_cart:
+            print("購物車是空的，沒有東西可以爬取。")
+            return
+    except FileNotFoundError:
+        print("錯誤：找不到 'cart.json'。請確保檔案存在於正確的路徑。")
+        return
+    except json.JSONDecodeError:
+        print("錯誤：'cart.json' 格式不正確。")
+        return
+
     # 初始化爬蟲
     scraper = RutenScraper()
-    
-    # 執行爬蟲
-    print(f"\n開始搜尋關鍵字：{keyword}")
-    products = await scraper.process_products_async(keyword)
-    
-    # 儲存資料
-    if output:
-        output_file = output
+    all_products_list = []
+
+    # 為購物車中的每張卡片的每個 target_id 執行爬蟲
+    for item in shopping_cart:
+        card_name = item.get('card_name_zh')
+        target_ids = item.get('target_ids', [])
+        
+        if not card_name or not target_ids:
+            continue
+
+        for target_id in target_ids:
+            print(f"\n開始搜尋卡片：{card_name}, ID: {target_id}")
+            
+            # 限制最多5頁
+            products = await scraper.process_products_async(target_id, max_pages=5)
+            
+            # 為結果加上原始卡片名稱標記
+            for product in products:
+                product['search_card_name'] = card_name
+            
+            all_products_list.extend(products)
+
+    # 儲存所有資料到單一檔案
+    if all_products_list:
+        output_file = f"ruten_all_cards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        scraper.save_data(all_products_list, output_file)
+        print(f"\n爬蟲完成！所有資料已儲存至：{output_file}")
     else:
-        output_file = f"ruten_{keyword}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    
-    scraper.save_data(products, output_file)
-    print(f"\n爬蟲完成！資料已儲存至：{output_file}")
+        print("\n爬蟲完成，但沒有找到任何商品。")
 
 def main():
     asyncio.run(main_async())
 
 if __name__ == "__main__":
-    main() 
+    main()
+ 
