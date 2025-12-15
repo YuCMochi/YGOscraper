@@ -1,0 +1,195 @@
+{
+  "global_settings": {
+    "default_shipping_cost": 60,
+    "global_exclude_keywords": [
+      "卡套",
+      "桌墊",
+      "損卡",
+      "福袋",
+      "影印",
+      "亞英",
+      "美英"
+    ],
+    "global_exclude_seller": [
+      "19319587",
+      "12987125"
+    ]
+  },
+  "shopping_cart": [
+    {
+      "card_name_zh": "異魚妖精",
+      "required_amount": 1,
+      "target_ids": [
+        "WPP4-JP016"
+      ]
+    },
+    {
+      "card_name_zh": "異魚之燈",
+      "required_amount": 2,
+      "target_ids": [
+        "WPP4-JP015"
+      ]
+    },
+    {
+      "card_name_zh": "異魚之紅玉",
+      "required_amount": 1,
+      "target_ids": [
+        "WPP4-JP017"
+      ]
+    },
+    {
+      "card_name_zh": "異魚之朧",
+      "required_amount": 1,
+      "target_ids": [
+        "PHNI-JP015"
+      ]
+    },
+    {
+      "card_name_zh": "異魚之兆",
+      "required_amount": 1,
+      "target_ids": [
+        "WPP4-JP018"
+      ]
+    },
+    {
+      "card_name_zh": "異魚之陰影",
+      "required_amount": 1,
+      "target_ids": [
+        "WPP4-JP020"
+      ]
+    },
+    {
+      "card_name_zh": "異魚之月夜",
+      "required_amount": 1,
+      "target_ids": [
+        "PHNI-JP016"
+      ]
+    },
+    {
+      "card_name_zh": "異魚之守人",
+      "required_amount": 1,
+      "target_ids": [
+        "WPP4-JP019"
+      ]
+    },
+    {
+      "card_name_zh": "白鰯",
+      "required_amount": 3,
+      "target_ids": [
+        "PHNI-JP007"
+      ]
+    },
+    {
+      "card_name_zh": "白曼波",
+      "required_amount": 1,
+      "target_ids": [
+        "PHNI-JP006"
+      ]
+    },
+    {
+      "card_name_zh": "搖海魚 枯葉",
+      "required_amount": 3,
+      "target_ids": [
+        "AC04-JP038",
+        "23TP-JP401",
+        "ROTD-JP033"
+      ]
+    },
+    {
+      "card_name_zh": "邃淵鯊",
+      "required_amount": 3,
+      "target_ids": [
+        "AC04-JP036",
+        "DP26-JP001"
+      ]
+    },
+    {
+      "card_name_zh": "不看海豚",
+      "required_amount": 1,
+      "target_ids": [
+        "WPP4-JP047"
+      ]
+    },
+    {
+      "card_name_zh": "深遠之宇宙",
+      "required_amount": 3,
+      "target_ids": [
+        "WPP4-JP025"
+      ]
+    },
+    {
+      "card_name_zh": "白之輪迴",
+      "required_amount": 3,
+      "target_ids": [
+        "PHNI-JP058"
+      ]
+    },
+    {
+      "card_name_zh": "異魚食鏈",
+      "required_amount": 2,
+      "target_ids": [
+        "WPP4-JP026"
+      ]
+    },
+    {
+      "card_name_zh": "異魚雙角",
+      "required_amount": 2,
+      "target_ids": [
+        "WPP4-JP022"
+      ]
+    },
+    {
+      "card_name_zh": "異魚大蛇",
+      "required_amount": 2,
+      "target_ids": [
+        "WPP4-JP021"
+      ]
+    },
+    {
+      "card_name_zh": "深遠之異魚",
+      "required_amount": 1,
+      "target_ids": [
+        "WPP4-JP024"
+      ]
+    },
+    {
+      "card_name_zh": "白鬥氣白鯨",
+      "required_amount": 1,
+      "target_ids": [
+        "23TP-JP408",
+        "CP17-JP020"
+      ]
+    },
+    {
+      "card_name_zh": "白鬥氣砂滑",
+      "required_amount": 1,
+      "target_ids": [
+        "PHNI-JP041"
+      ]
+    },
+    {
+      "card_name_zh": "No.4 猛毒刺胞 隱形水母怪",
+      "required_amount": 1,
+      "target_ids": [
+        "AC04-JP040",
+        "AC01-JP030"
+      ]
+    },
+    {
+      "card_name_zh": "隱形水母怪碟狀幼體",
+      "required_amount": 2,
+      "target_ids": [
+        "AC01-JP031"
+      ]
+    },
+    {
+      "card_name_zh": "世海龍 西蘭提斯",
+      "required_amount": 1,
+      "target_ids": [
+        "TT02-JPA35",
+        "SUB1-JPS11",
+        "DABL-JP050"
+      ]
+    }
+  ]
+}

@@ -1,9 +1,13 @@
 __pycache__/
 *.pyc
 .env
-product_images/
-.DS_Store
 venv/
 .venv/
-*.log
-data/
+
+product_images/
+.DS_Store
+
+# 忽略data資料夾下所有東西
+data/*
+# 除了data資料夾下的cart.json
+!data/cart.json
