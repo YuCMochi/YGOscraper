@@ -55,71 +55,98 @@ def load_market_data(needed_cards):
     return card_listings
 
 def solve_best_combination(data, needed_cards, shipping_fee):
-    """使用 PuLP 計算最佳購買組合 (修正版)"""
-    print("\n正在計算最佳組合...")
+    """使用 PuLP 計算最佳購買組合 (白話註解優化版)"""
+    print("\n正在計算最佳組合 (算法優化中)...")
 
-    # --- 資料預處理 ---
-    # `data` 現在是包含所有獨立商品資訊的 list of dicts
-    sellers = set(item['seller_id'] for item in data)
+    # --- 1. 資料整理 (就像把亂七八糟的傳單分類整理好) ---
     num_listings = len(data)
+    
+    # 【優化重點 1】建立快速查找表
+    # 原本的寫法：每次要找某張卡，都要把整疊傳單(data)從頭翻到尾。
+    # 現在的寫法：先花一點時間做目錄。
+    #   - card_to_indices: 想買「青眼白龍」？直接翻到第 5, 12, 80 頁。
+    #   - seller_to_indices: 想看「賣家A」賣什麼？直接翻到第 5, 6, 7 頁。
+    card_to_indices = {} 
+    seller_to_indices = {}
+    
+    for i, item in enumerate(data):
+        c_name = item['search_card_name']
+        s_id = item['seller_id']
+        
+        # 建立卡片目錄
+        if c_name not in card_to_indices:
+            card_to_indices[c_name] = []
+        card_to_indices[c_name].append(i)
+        
+        # 建立賣家目錄
+        if s_id not in seller_to_indices:
+            seller_to_indices[s_id] = []
+        seller_to_indices[s_id].append(i)
 
-    # --- 建立數學模型 (PuLP) ---
+    sellers = list(seller_to_indices.keys())
+
+    # --- 2. 提早檢查 (就像出門前先打電話問老闆有沒有貨) ---
+    # 【優化重點 2】提早檢測無解
+    # 原本的寫法：不管有沒有貨，先架設超級電腦算半天，最後才說無解。
+    # 現在的寫法：先算一下市場總庫存，如果不夠您要的量，直接報錯，不用浪費時間算錢了。
+    for card, required in needed_cards.items():
+        indices = card_to_indices.get(card, [])
+        total_stock = sum(data[i]['stock_qty'] for i in indices)
+        if total_stock < required:
+            print(f"\n錯誤：市場上 '{card}' 的總庫存 ({total_stock}) 不足需求量 ({required})！無法求解。")
+            return
+
+    # --- 3. 設定數學模型 (告訴電腦我們的目標) ---
     prob = pulp.LpProblem("Card_Optimizer", pulp.LpMinimize)
 
-    # 變數 1: use_seller[賣家] -> 0或1 (二元變數)
+    # 變數定義 (電腦可以調整的數字)
+    # use_seller: 這個賣家要不要用？ (0=不用, 1=要用)
     use_seller = pulp.LpVariable.dicts("UseSeller", sellers, cat='Binary')
-
-    # 變數 2: buy_qty[i] -> 從第 i 個商品購買的數量 (整數變數)
+    # buy_qty: 這個商品要買幾張？
     buy_qty = pulp.LpVariable.dicts("BuyQty", range(num_listings), lowBound=0, cat='Integer')
 
-    # --- 設定限制條件 ---
+    # --- 4. 設定限制規則 (給電腦的購買守則) ---
 
-    # 限制 1: 每張需要的卡，總購買量必須剛好等於需求量
+    # 規則 A: 每種卡片都要買齊
     for card, required_amount in needed_cards.items():
-        # 加總所有符合該卡名的商品的購買量
-        potential_buys = [buy_qty[i] for i, listing in enumerate(data) if listing['search_card_name'] == card]
+        # 直接查目錄，不用再從頭翻資料了 (速度變快很多)
+        indices = card_to_indices[card] 
+        prob += pulp.lpSum([buy_qty[i] for i in indices]) == required_amount, f"Fulfill_{card}"
+
+    # 規則 B: 庫存與運費邏輯
+    # 【優化重點 3】邏輯合併
+    # 原本寫了兩條規則：1.不能買超過庫存 2.如果不付運費就不能買。
+    # 現在合併成一句話：「購買量 必須小於或等於 (庫存量 x 有沒有付運費)」
+    #  - 如果沒付運費 (use_seller=0)，購買量就必須 <= 0 (也就是不能買)。
+    #  - 如果有付運費 (use_seller=1)，購買量就必須 <= 庫存量 (正常買)。
+    for s_id in sellers:
+        seller_indices = seller_to_indices[s_id] # 直接查賣家目錄
+        seller_var = use_seller[s_id]
         
-        if not potential_buys:
-            print(f"\n警告：市場上找不到任何賣家販售 '{card}'！無法完成最佳化。")
-            return
-        prob += pulp.lpSum(potential_buys) == required_amount, f"Fulfill_{card.replace(' ', '_')}"
+        for i in seller_indices:
+            stock = data[i]['stock_qty']
+            prob += buy_qty[i] <= stock * seller_var, f"Link_Stock_Seller_{i}"
 
-    # 限制 2: 向某個商品購買的數量，不能超過它的庫存
-    for i in range(num_listings):
-        prob += buy_qty[i] <= data[i]['stock_qty'], f"StockLimit_{i}"
-
-    # 限制 3: 如果在某家店買了卡(buy_qty > 0)，則必須啟用該店的運費(use_seller=1)
-    # 這裡我們對每個賣家下的所有商品進行關聯
-    for seller_id in sellers:
-        # 找出這個賣家的所有商品 index
-        listings_from_seller = [i for i, listing in enumerate(data) if listing['seller_id'] == seller_id]
-        for i in listings_from_seller:
-            # 購買量 <= 該商品最大庫存 * 該賣家是否啟用
-            prob += buy_qty[i] <= data[i]['stock_qty'] * use_seller[seller_id], f"ShippingLogic_{i}"
-
-    # --- 設定目標函數 (總金額) ---
-    # 1. 卡片總價格
+    # --- 5. 設定目標 (我們想要什麼最少？) ---
+    # 商品總價
     items_cost = pulp.lpSum([buy_qty[i] * data[i]['price'] for i in range(num_listings)])
-    
-    # 2. 運費總價格
+    # 運費總價 (有啟用的賣家才算運費)
     shipping_total = pulp.lpSum([use_seller[s] * shipping_fee for s in sellers])
     
+    # 目標：總花費越少越好
     prob += items_cost + shipping_total
 
-    # --- 求解 ---
-    # 動態生成檔名，例如：20231214_152024.log
+    # --- 6. 開始計算 ---
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_filename = f"data/{timestamp}.log"
-    
-    # 將問題寫入 .log 檔案以供除錯
-    print(f"將 PuLP 問題寫入至 {log_filename}...")
+    print(f"將問題寫入記錄檔 {log_filename}...")
     prob.writeLP(log_filename)
     
-    # 使用 CBC 求解器，並可以增加時間限制
-    solver = pulp.PULP_CBC_CMD(timeLimit=300, msg=1)
+    # 叫電腦開始算 (gapRel=0.0 代表我要精確解，不接受大概的答案)
+    solver = pulp.PULP_CBC_CMD(timeLimit=300, msg=1, gapRel=0.0)
     prob.solve(solver)
 
-    # --- 輸出結果 ---
+    # --- 輸出結果 (跟原本一樣，沒動) ---
     if pulp.LpStatus[prob.status] == 'Optimal':
         total_price = pulp.value(prob.objective)
         print(f"\n=== 找到最佳方案！總金額: ${int(total_price)} ===")
@@ -128,12 +155,12 @@ def solve_best_combination(data, needed_cards, shipping_fee):
         purchase_summary = []
         
         for i in range(num_listings):
-            if buy_qty[i].varValue > 0:
+            val = buy_qty[i].varValue
+            if val and val > 0:
                 listing = data[i]
-                quantity = int(buy_qty[i].varValue)
+                quantity = int(val)
                 seller_id = listing['seller_id']
 
-                # 收集簡易購買清單的資訊
                 purchase_summary.append({
                     "product_id": listing['product_id'],
                     "張數": quantity
@@ -142,7 +169,6 @@ def solve_best_combination(data, needed_cards, shipping_fee):
                 if seller_id not in final_plan:
                     final_plan[seller_id] = []
                 
-                # 收集詳細購買清單的資訊
                 final_plan[seller_id].append({
                     "card": listing['search_card_name'],
                     "price": listing['price'],
@@ -150,11 +176,9 @@ def solve_best_combination(data, needed_cards, shipping_fee):
                     "product_name": listing['product_name'] 
                 })
 
-        # --- 新增：輸出簡易購買清單 ---
         if purchase_summary:
             print("\n---【最終購買清單】---")
             summary_df = pd.DataFrame(purchase_summary)
-            # 使用 to_string() 讓表格對齊且不顯示 index
             print(summary_df.to_string(index=False))
             print("----------------------")
         
@@ -176,9 +200,7 @@ def solve_best_combination(data, needed_cards, shipping_fee):
 
     else:
         print(f"\n無法找到最佳解。狀態: {pulp.LpStatus[prob.status]}")
-        print("可能原因：")
-        print("1. 某張卡片的市場總庫存量小於您的需求量。")
-        print("2. 求解器在時間限制內未找到解。")
+        print("可能原因：求解器在時間限制內未找到解，或者邏輯上有衝突。")
 
 def main():
     """主執行函數"""
