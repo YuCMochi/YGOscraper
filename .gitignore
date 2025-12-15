@@ -3,6 +3,7 @@ __pycache__/
 .env
 product_images/
 .DS_Store
+venv/
 .venv/
 *.log
 data/
