@@ -15,13 +15,19 @@ def load_shopping_cart(cart_path='data/cart.json'):
         item['card_name_zh']: item['required_amount']
         for item in cart_data['shopping_cart']
     }
-    shipping_fee = cart_data['global_settings']['default_shipping_cost']
+    
+    settings = cart_data.get('global_settings', {})
+    shipping_fee = settings.get('default_shipping_cost', 60)
+    min_purchase_limit = settings.get('min_purchase_limit', 0)
     
     print(f"預計運費: {shipping_fee}")
+    if min_purchase_limit > 0:
+        print(f"單一商家最低消費金額 (不含運費): {min_purchase_limit}")
+    
     print("需求清單:")
     for name, amount in needed_cards.items():
         print(f"  - {name} (需 {amount} 張)")
-    return needed_cards, shipping_fee
+    return needed_cards, shipping_fee, min_purchase_limit
 
 def load_market_data(needed_cards):
     """從 CSV 檔案讀取市場上的卡片資訊"""
@@ -54,7 +60,7 @@ def load_market_data(needed_cards):
     print(f"從市場資料中找到 {len(card_listings)} 個相關商品。")
     return card_listings
 
-def solve_best_combination(data, needed_cards, shipping_fee):
+def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit):
     """使用 PuLP 計算最佳購買組合 (白話註解優化版)"""
     print("\n正在計算最佳組合 (算法優化中)...")
 
@@ -126,6 +132,19 @@ def solve_best_combination(data, needed_cards, shipping_fee):
         for i in seller_indices:
             stock = data[i]['stock_qty']
             prob += buy_qty[i] <= stock * seller_var, f"Link_Stock_Seller_{i}"
+
+    # 規則 C: 處理單一商家低消限制
+    if min_purchase_limit > 0:
+        for s_id in sellers:
+            seller_indices = seller_to_indices[s_id]
+            seller_var = use_seller[s_id]
+            
+            # 計算該賣家的商品總金額
+            seller_items_cost = pulp.lpSum([buy_qty[i] * data[i]['price'] for i in seller_indices])
+            
+            # 如果啟用賣家(seller_var=1)，商品總額必須 >= 低消。
+            # 如果未啟用(seller_var=0)，商品總額為0，此條件 (0 >= 0) 自然滿足。
+            prob += seller_items_cost >= min_purchase_limit * seller_var, f"Min_Purchase_Limit_{s_id}"
 
     # --- 5. 設定目標 (我們想要什麼最少？) ---
     # 商品總價
@@ -208,11 +227,11 @@ def main():
         # 確保 'data' 目錄存在
         os.makedirs('data', exist_ok=True)
         
-        needed_cards, shipping_fee = load_shopping_cart()
+        needed_cards, shipping_fee, min_purchase_limit = load_shopping_cart()
         market_data = load_market_data(needed_cards)
         
         if market_data is not None and needed_cards:
-            solve_best_combination(market_data, needed_cards, shipping_fee)
+            solve_best_combination(market_data, needed_cards, shipping_fee, min_purchase_limit)
             
     except FileNotFoundError as e:
         print(f"\n錯誤：找不到檔案 {e.filename}。請確認 'cart.json' 是否存在於 'data' 目錄中。")

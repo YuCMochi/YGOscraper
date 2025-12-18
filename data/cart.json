@@ -1,6 +1,7 @@
 {
   "global_settings": {
     "default_shipping_cost": 60,
+    "min_purchase_limit": 100,
     "global_exclude_keywords": [
       "卡套",
       "桌墊",
