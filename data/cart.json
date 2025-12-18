@@ -18,56 +18,56 @@
   },
   "shopping_cart": [
     {
-      "card_name_zh": "異魚妖精",
+      "card_name_zh": "溝鯷妖精",
       "required_amount": 1,
       "target_ids": [
         "WPP4-JP016"
       ]
     },
     {
-      "card_name_zh": "異魚之燈",
+      "card_name_zh": "溝鯷之燈",
       "required_amount": 2,
       "target_ids": [
         "WPP4-JP015"
       ]
     },
     {
-      "card_name_zh": "異魚之紅玉",
+      "card_name_zh": "溝鯷之紅玉",
       "required_amount": 1,
       "target_ids": [
         "WPP4-JP017"
       ]
     },
     {
-      "card_name_zh": "異魚之朧",
+      "card_name_zh": "溝鯷之朧",
       "required_amount": 1,
       "target_ids": [
         "PHNI-JP015"
       ]
     },
     {
-      "card_name_zh": "異魚之兆",
+      "card_name_zh": "溝鯷之兆",
       "required_amount": 1,
       "target_ids": [
         "WPP4-JP018"
       ]
     },
     {
-      "card_name_zh": "異魚之陰影",
+      "card_name_zh": "溝鯷之陰影",
       "required_amount": 1,
       "target_ids": [
         "WPP4-JP020"
       ]
     },
     {
-      "card_name_zh": "異魚之月夜",
+      "card_name_zh": "溝鯷之月夜",
       "required_amount": 1,
       "target_ids": [
         "PHNI-JP016"
       ]
     },
     {
-      "card_name_zh": "異魚之守人",
+      "card_name_zh": "溝鯷之守人",
       "required_amount": 1,
       "target_ids": [
         "WPP4-JP019"
@@ -126,28 +126,28 @@
       ]
     },
     {
-      "card_name_zh": "異魚食鏈",
+      "card_name_zh": "溝鯷食鏈",
       "required_amount": 2,
       "target_ids": [
         "WPP4-JP026"
       ]
     },
     {
-      "card_name_zh": "異魚雙角",
+      "card_name_zh": "溝鯷雙角",
       "required_amount": 2,
       "target_ids": [
         "WPP4-JP022"
       ]
     },
     {
-      "card_name_zh": "異魚大蛇",
+      "card_name_zh": "溝鯷大蛇",
       "required_amount": 2,
       "target_ids": [
         "WPP4-JP021"
       ]
     },
     {
-      "card_name_zh": "深遠之異魚",
+      "card_name_zh": "深遠之溝鯷",
       "required_amount": 1,
       "target_ids": [
         "WPP4-JP024"
