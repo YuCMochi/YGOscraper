@@ -167,55 +167,71 @@ def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit)
 
     # --- 輸出結果 (跟原本一樣，沒動) ---
     if pulp.LpStatus[prob.status] == 'Optimal':
-        total_price = pulp.value(prob.objective)
-        print(f"\n=== 找到最佳方案！總金額: ${int(total_price)} ===")
+        total_price_with_shipping = pulp.value(prob.objective)
+        print(f"\n=== 找到最佳方案！總金額 (含運費): ${int(total_price_with_shipping)} ===")
         
-        final_plan = {}
-        purchase_summary = []
+        # --- 建立 JSON 輸出 ---
+        final_json_output = {
+            "sellers": {},
+            "summary": {}
+        }
         
+        # 1. 整理購買的商品
+        temp_sellers = {}
         for i in range(num_listings):
-            val = buy_qty[i].varValue
-            if val and val > 0:
+            if buy_qty[i].varValue and buy_qty[i].varValue > 0:
                 listing = data[i]
-                quantity = int(val)
+                quantity = int(buy_qty[i].varValue)
                 seller_id = listing['seller_id']
 
-                purchase_summary.append({
-                    "product_id": listing['product_id'],
-                    "張數": quantity
-                })
+                if seller_id not in temp_sellers:
+                    temp_sellers[seller_id] = []
                 
-                if seller_id not in final_plan:
-                    final_plan[seller_id] = []
-                
-                final_plan[seller_id].append({
-                    "card": listing['search_card_name'],
-                    "price": listing['price'],
-                    "quantity": quantity,
-                    "product_name": listing['product_name'] 
-                })
+                item_details = {
+                    'buy_qty': quantity,
+                    'search_card_name': listing.get('search_card_name'),
+                    'product_id': listing.get('product_id'),
+                    'product_name': listing.get('product_name'),
+                    'seller_id': seller_id,
+                    'price': listing.get('price'),
+                    'shipping_cost': listing.get('shipping_cost', shipping_fee),
+                    'post_time': listing.get('post_time'),
+                    'image_url': listing.get('image_url'),
+                }
+                temp_sellers[seller_id].append(item_details)
+        
+        # 2. 計算小計並整理到最終JSON中
+        all_items_cost = 0
+        sorted_seller_ids = sorted(temp_sellers.keys())
 
-        if purchase_summary:
-            print("\n---【最終購買清單】---")
-            summary_df = pd.DataFrame(purchase_summary)
-            print(summary_df.to_string(index=False))
-            print("----------------------")
+        for seller_id in sorted_seller_ids:
+            items = temp_sellers[seller_id]
+            seller_items_cost = sum(item['price'] * item['buy_qty'] for item in items)
+            all_items_cost += seller_items_cost
+            final_json_output["sellers"][seller_id] = {
+                "items": items,
+                "items_subtotal": int(seller_items_cost)
+            }
         
-        grand_total_check = 0
-        for seller_id, items in sorted(final_plan.items()):
-            seller_item_cost = sum(i['price'] * i['quantity'] for i in items)
-            subtotal = seller_item_cost + shipping_fee
-            grand_total_check += subtotal
-            
-            print(f"\n--- 商家ID: {seller_id} ---")
-            print(f"  運費: {shipping_fee}")
-            print(f"  小計: {int(subtotal)}")
-            print("  購買明細:")
-            for item in items:
-                print(f"    - [{item['card']}] {item['product_name']} (${item['price']}) x {item['quantity']} 張")
+        # 3. 加上總計資訊
+        num_sellers = len(temp_sellers)
+        total_shipping_cost = num_sellers * shipping_fee
+        final_json_output['summary'] = {
+            'total_items_cost': int(all_items_cost),
+            'total_shipping_cost': int(total_shipping_cost),
+            'grand_total': int(all_items_cost + total_shipping_cost),
+            'sellers_count': num_sellers
+        }
+
+        # 4. 儲存並印出 JSON
+        output_filename = f"data/purchase_plan_{timestamp}.json"
+        print(f"\n將最佳購買方案寫入 JSON 檔案: {output_filename}")
+        with open(output_filename, 'w', encoding='utf-8') as f:
+            json.dump(final_json_output, f, ensure_ascii=False, indent=4)
         
-        print("\n==========================================")
-        print(f"驗算總金額: {int(grand_total_check)}")
+        print("\n--- 最終購買方案 (JSON) ---")
+        print(json.dumps(final_json_output, ensure_ascii=False, indent=4))
+        print("--------------------------")
 
     else:
         print(f"\n無法找到最佳解。狀態: {pulp.LpStatus[prob.status]}")
