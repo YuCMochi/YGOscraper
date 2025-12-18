@@ -126,6 +126,10 @@ class RutenScraper:
             price_range = product.get('PriceRange', [0])
             price = int(price_range[0]) if price_range and price_range[0] is not None else 0
             
+            alt_price = 0
+            if price_range and len(price_range) > 1 and price_range[0] != price_range[-1]:
+                alt_price = 1
+
             shipping_cost = product.get('ShippingCost')
             shipping_cost = int(shipping_cost) if shipping_cost is not None else 0
 
@@ -136,6 +140,7 @@ class RutenScraper:
                 '商品名稱': product.get('ProdName', ''),
                 '賣家ID': product.get('SellerId', ''),
                 '價格': price,
+                '是否有價差': alt_price,
                 '剩餘數量': remaining_stock,
                 '最低運費': shipping_cost,
                 '上架時間': product.get('PostTime', ''),
@@ -204,6 +209,7 @@ class RutenScraper:
                 '商品名稱': 'product_name',
                 '賣家ID': 'seller_id',
                 '價格': 'price',
+                '是否有價差': 'alt_price',
                 '剩餘數量': 'stock_qty',
                 '最低運費': 'shipping_cost',
                 '上架時間': 'post_time',

@@ -68,6 +68,10 @@ def clean_latest_ruten_csv():
                 except (ValueError, TypeError):
                     # 保留價格不是有效數字或缺失的行
                     pass
+                
+                # 依 alt_price 過濾: 自動刪除 alt_price 為 '1' 的商品 (表示有可選價格)
+                if row.get('alt_price') == '1':
+                    continue
 
                 product_name = row.get('product_name', '')
                 
