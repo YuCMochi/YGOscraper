@@ -114,3 +114,5 @@ flowchart TB
     * GUI讀取目錄下的`plan.json`並以其資料內的結構列出結果
     * 依照每張卡的`product_id`設立超連結讓使用者能直接點擊去購買商品 格式如下
     `https://www.ruten.com.tw/item/show?product_id`
+
+streamlit run app.py
