@@ -5,6 +5,8 @@ import pulp
 import datetime
 import os
 
+import argparse
+
 def load_shopping_cart(cart_path='data/cart.json'):
     """從 cart.json 讀取購物車需求"""
     print(f"從 {cart_path} 載入購物車...")
@@ -29,17 +31,16 @@ def load_shopping_cart(cart_path='data/cart.json'):
         print(f"  - {name} (需 {amount} 張)")
     return needed_cards, shipping_fee, min_purchase_limit
 
-def load_market_data(needed_cards):
+def load_market_data(needed_cards, market_data_path):
     """從 CSV 檔案讀取市場上的卡片資訊"""
-    print("\n正在讀取市場資料...")
-    csv_files = glob.glob('data/C_ruten*.csv')
-    if not csv_files:
-        print("錯誤：在 'data' 目錄下找不到任何 'C_ruten' 開頭的 CSV 檔案！")
+    print(f"\n正在讀取市場資料: {market_data_path}...")
+    
+    if not os.path.exists(market_data_path):
+        print(f"錯誤：找不到檔案 {market_data_path}！")
         return None
     
-    print(f"找到以下檔案: {', '.join(csv_files)}")
     # 增加 dtype={'seller_id': str} 確保賣家ID被當作字串處理
-    df = pd.concat((pd.read_csv(f, dtype={'seller_id': str}) for f in csv_files), ignore_index=True)
+    df = pd.read_csv(market_data_path, dtype={'seller_id': str})
     
     # 過濾出我們需要的卡片
     market_data = df[df['search_card_name'].isin(needed_cards.keys())].copy()
@@ -60,7 +61,7 @@ def load_market_data(needed_cards):
     print(f"從市場資料中找到 {len(card_listings)} 個相關商品。")
     return card_listings
 
-def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit):
+def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit, log_path=None, output_json_path=None):
     """使用 PuLP 計算最佳購買組合 (白話註解優化版)"""
     print("\n正在計算最佳組合 (算法優化中)...")
 
@@ -156,10 +157,15 @@ def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit)
     prob += items_cost + shipping_total
 
     # --- 6. 開始計算 ---
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"data/{timestamp}.log"
-    print(f"將問題寫入記錄檔 {log_filename}...")
-    prob.writeLP(log_filename)
+    if not log_path:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = f"data/{timestamp}.log"
+    
+    # Ensure dir exists
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+    print(f"將問題寫入記錄檔 {log_path}...")
+    prob.writeLP(log_path)
     
     # 叫電腦開始算 (gapRel=0.0 代表我要精確解，不接受大概的答案)
     solver = pulp.PULP_CBC_CMD(timeLimit=300, msg=1, gapRel=0.0)
@@ -224,9 +230,14 @@ def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit)
         }
 
         # 4. 儲存並印出 JSON
-        output_filename = f"data/purchase_plan_{timestamp}.json"
-        print(f"\n將最佳購買方案寫入 JSON 檔案: {output_filename}")
-        with open(output_filename, 'w', encoding='utf-8') as f:
+        if not output_json_path:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_json_path = f"data/purchase_plan_{timestamp}.json"
+        
+        os.makedirs(os.path.dirname(output_json_path), exist_ok=True)
+
+        print(f"\n將最佳購買方案寫入 JSON 檔案: {output_json_path}")
+        with open(output_json_path, 'w', encoding='utf-8') as f:
             json.dump(final_json_output, f, ensure_ascii=False, indent=4)
         
         print("\n--- 最終購買方案 (JSON) ---")
@@ -239,18 +250,25 @@ def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit)
 
 def main():
     """主執行函數"""
+    parser = argparse.ArgumentParser(description='Optimize Purchase Plan')
+    parser.add_argument('--cart', default='data/cart.json', help='Path to cart.json')
+    parser.add_argument('--input_csv', required=True, help='Path to input market data CSV')
+    parser.add_argument('--output_log', default=None, help='Path to output log file')
+    parser.add_argument('--output_json', default=None, help='Path to output JSON file')
+    args = parser.parse_args()
+
     try:
-        # 確保 'data' 目錄存在
+        # 確保 'data' 目錄存在 (backward compatibility mostly)
         os.makedirs('data', exist_ok=True)
         
-        needed_cards, shipping_fee, min_purchase_limit = load_shopping_cart()
-        market_data = load_market_data(needed_cards)
+        needed_cards, shipping_fee, min_purchase_limit = load_shopping_cart(args.cart)
+        market_data = load_market_data(needed_cards, args.input_csv)
         
         if market_data is not None and needed_cards:
-            solve_best_combination(market_data, needed_cards, shipping_fee, min_purchase_limit)
+            solve_best_combination(market_data, needed_cards, shipping_fee, min_purchase_limit, args.output_log, args.output_json)
             
     except FileNotFoundError as e:
-        print(f"\n錯誤：找不到檔案 {e.filename}。請確認 'cart.json' 是否存在於 'data' 目錄中。")
+        print(f"\n錯誤：找不到檔案 {e.filename}。")
     except Exception as e:
         print(f"\n發生預期外的錯誤: {e}")
         import traceback

@@ -194,13 +194,13 @@ class RutenScraper:
         
         return all_products
 
-    def save_data(self, data: List[Dict], filename: str = None) -> None:
+    def save_data(self, data: List[Dict], output_file: str = None) -> None:
         """儲存爬取的資料"""
-        if not filename:
-            filename = f"ruten_products_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        if not output_file:
+            output_file = f"ruten_products_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         
-        if not filename.lower().endswith('.csv'):
-            filename += '.csv'
+        if not output_file.lower().endswith('.csv'):
+            output_file += '.csv'
         
         try:
             df = pd.DataFrame(data)
@@ -222,25 +222,25 @@ class RutenScraper:
                 cols.insert(0, cols.pop(cols.index('search_card_name')))
                 df = df[cols]
 
-            df.to_csv(filename, index=False, encoding='utf-8-sig')
-            logger.info(f"資料已成功儲存到 {filename}")
+            df.to_csv(output_file, index=False, encoding='utf-8-sig')
+            logger.info(f"資料已成功儲存到 {output_file}")
         except Exception as e:
             logger.error(f"儲存資料時發生錯誤：{e}")
 
-async def main_async():
+async def main_async(cart_path='data/cart.json', output_path=None):
     # 從 cart.json 讀取購物車資訊
     try:
-        with open('data/cart.json', 'r', encoding='utf-8') as f:
+        with open(cart_path, 'r', encoding='utf-8') as f:
             cart_data = json.load(f)
         shopping_cart = cart_data.get('shopping_cart', [])
         if not shopping_cart:
             print("購物車是空的，沒有東西可以爬取。")
             return
     except FileNotFoundError:
-        print("錯誤：找不到 'cart.json'。請確保檔案存在於正確的路徑。")
+        print(f"錯誤：找不到 '{cart_path}'。請確保檔案存在於正確的路徑。")
         return
     except json.JSONDecodeError:
-        print("錯誤：'cart.json' 格式不正確。")
+        print(f"錯誤：'{cart_path}' 格式不正確。")
         return
 
     # 初始化爬蟲
@@ -267,19 +267,27 @@ async def main_async():
             
             all_products_list.extend(products)
 
-    # 確保 'data' 目錄存在
-    os.makedirs('data', exist_ok=True)
+    # 確保輸出目錄存在
+    if output_path:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    else:
+        os.makedirs('data', exist_ok=True)
+        output_path = f"data/ruten_all_cards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     
     # 儲存所有資料到單一檔案
     if all_products_list:
-        output_file = f"data/ruten_all_cards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        scraper.save_data(all_products_list, output_file)
-        print(f"\n爬蟲完成！所有資料已儲存至：{output_file}")
+        scraper.save_data(all_products_list, output_file=output_path) # save_data needs adjustment to accept output_file
+        print(f"\n爬蟲完成！所有資料已儲存至：{output_path}")
     else:
         print("\n爬蟲完成，但沒有找到任何商品。")
 
 def main():
-    asyncio.run(main_async())
+    parser = argparse.ArgumentParser(description='Ruten Scraper')
+    parser.add_argument('--cart', default='data/cart.json', help='Path to cart.json')
+    parser.add_argument('--output', default=None, help='Path to output CSV file')
+    args = parser.parse_args()
+    
+    asyncio.run(main_async(args.cart, args.output))
 
 if __name__ == "__main__":
     main()

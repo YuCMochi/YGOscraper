@@ -3,25 +3,17 @@ import json
 import glob
 import os
 
-def clean_latest_ruten_csv():
-    # 確保 'data' 目錄存在
-    os.makedirs('data', exist_ok=True)
+import argparse
 
-    # 1. 尋找最新的 ruten*.csv 檔案
-    try:
-        list_of_files = glob.glob('data/ruten*.csv')
-        if not list_of_files:
-            print("在 'data' 目錄中未找到以 'ruten' 開頭的 CSV 檔案。")
-            return
-        latest_file = max(list_of_files, key=os.path.getmtime)
-        print(f"正在處理最新的檔案: {latest_file}")
-    except Exception as e:
-        print(f"尋找最新的 CSV 檔案時發生錯誤: {e}")
-        return
+def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
+    # 確保輸出目錄存在
+    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
+
+    print(f"正在處理檔案: {input_csv}")
 
     # 2. 從 cart.json 讀取設定
     try:
-        with open('data/cart.json', 'r', encoding='utf-8') as f:
+        with open(cart_config, 'r', encoding='utf-8') as f:
             config = json.load(f)
         global_settings = config.get('global_settings', {})
         # 讀取排除關鍵字
@@ -41,17 +33,17 @@ def clean_latest_ruten_csv():
         else:
             print(f"已載入 {len(all_target_ids)} 個目標卡號。")
     except FileNotFoundError:
-        print("錯誤: 找不到 data/cart.json。")
+        print(f"錯誤: 找不到 {cart_config}。")
         return
     except json.JSONDecodeError:
-        print("錯誤: 無法解析 cart.json。")
+        print(f"錯誤: 無法解析 {cart_config}。")
         return
 
     # 3. 處理 CSV 檔案
     cleaned_rows = []
     seller_excluded_count = 0
     try:
-        with open(latest_file, 'r', encoding='utf-8') as infile:
+        with open(input_csv, 'r', encoding='utf-8') as infile:
             reader = csv.DictReader(infile)
             fieldnames = reader.fieldnames
             for row in reader:
@@ -94,17 +86,15 @@ def clean_latest_ruten_csv():
                 
                 cleaned_rows.append(row)
     except FileNotFoundError:
-        print(f"錯誤: 找不到 {latest_file}。")
+        print(f"錯誤: 找不到 {input_csv}。")
         return
     except Exception as e:
         print(f"處理 CSV 時發生錯誤: {e}")
         return
         
-    # 4. 寫入新檔案並（選擇性）移除舊檔案
-    output_filename = os.path.join('data', f"C_{os.path.basename(latest_file)}")
-    
+    # 4. 寫入新檔案
     try:
-        with open(output_filename, 'w', encoding='utf-8', newline='') as outfile:
+        with open(output_csv, 'w', encoding='utf-8', newline='') as outfile:
             writer = csv.DictWriter(outfile, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(cleaned_rows)
@@ -112,13 +102,16 @@ def clean_latest_ruten_csv():
         if seller_excluded_count > 0:
             print(f"因賣家黑名單排除了 {seller_excluded_count} 個商品。")
         print(f"成功清理 {len(cleaned_rows)} 行。")
-        print(f"清理後的檔案儲存為: {output_filename}")
-        
-        # os.remove(latest_file)
-        # print(f"原始檔案 '{latest_file}' 已被移除。")
+        print(f"清理後的檔案儲存為: {output_csv}")
 
     except Exception as e:
         print(f"寫入新的 CSV 檔案時發生錯誤: {e}")
 
 if __name__ == "__main__":
-    clean_latest_ruten_csv()
+    parser = argparse.ArgumentParser(description='Clean Ruten CSV data')
+    parser.add_argument('--input', required=True, help='Path to input CSV file')
+    parser.add_argument('--output', required=True, help='Path to output CSV file')
+    parser.add_argument('--cart', default='data/cart.json', help='Path to cart.json config')
+    
+    args = parser.parse_args()
+    clean_ruten_csv(args.input, args.output, args.cart)
