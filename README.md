@@ -40,3 +40,30 @@ flowchart TB
     Src --> Components["cart.json"] & Utils["ruten_data.csv"] & n1["cleaned_ruten_data.csv"] & n2["caculate.log"] & n3["plan.json<br>"]
 
     Src@{ shape: rect}
+```
+
+## GUI 開發接口說明
+
+本系統已預留以下接口供未來圖形介面 (GUI) 開發整合使用：
+
+1.  **一鍵執行 (`start_process`)**
+    *   **位置**: `main_controller.py` -> `start_process()`
+    *   **用途**: 自動執行完整流程（建檔 -> 爬蟲 -> 清理 -> 計算）。
+    *   **回傳**: 該次任務的資料夾路徑。
+
+2.  **分段控制 (`MainController` Class)**
+    *   **位置**: `main_controller.py` -> `MainController` 類別
+    *   **方法**:
+        *   `initialize_project()`: 建立專案資料夾。
+        *   `run_scraper()`: 執行爬蟲。
+        *   `run_cleaner()`: 執行資料清理。
+        *   `run_calculator()`: 執行最佳化計算。
+    *   **用途**: 允許 GUI 逐步執行並更新進度條或狀態顯示。
+
+3.  **人機互動暫停點 (`wait_for_user_input`)**
+    *   **位置**: `main_controller.py` -> `wait_for_user_input()`
+    *   **用途**: 流程暫停點。GUI 可在此時彈出視窗讓使用者編輯 `cart.json`，確認後再繼續。
+
+4.  **專案路徑獲取 (`create_project_environment`)**
+    *   **位置**: `file_genarator.py` -> `FileGenerator.create_project_environment()`
+    *   **用途**: 取得當前任務的絕對路徑，方便 GUI 讀取產出的 `plan.json` 或開啟資料夾。
