@@ -31,15 +31,21 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
         if exclude_sellers:
             print(f"排除賣家 ID: {exclude_sellers}")
             
-        # 取得所有我們要找的卡號 (用來過濾無關商品)
-        all_target_ids = []
+        # 建立卡片名稱對應目標卡號的字典 (用來做精確過濾)
+        card_target_map = {}
+        all_target_ids = [] # 保留原本變數以防萬一，或用於統計
+        
         for item in config.get('shopping_cart', []):
-            all_target_ids.extend(item.get('target_ids', []))
+            c_name = item.get('card_name_zh')
+            t_ids = item.get('target_ids', [])
+            if c_name:
+                card_target_map[c_name] = t_ids
+            all_target_ids.extend(t_ids)
             
         if not all_target_ids:
             print("警告: 設定檔中沒有任何目標卡號 (target_ids)。")
         else:
-            print(f"已載入 {len(all_target_ids)} 個目標卡號。")
+            print(f"已載入 {len(all_target_ids)} 個目標卡號，涵蓋 {len(card_target_map)} 種卡片。")
             
     except FileNotFoundError:
         print(f"錯誤: 找不到設定檔 {cart_config}。")
@@ -53,7 +59,8 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
     seller_excluded_count = 0
     
     try:
-        with open(input_csv, 'r', encoding='utf-8') as infile:
+        # 使用 utf-8-sig 以處理可能的 BOM (Byte Order Mark)
+        with open(input_csv, 'r', encoding='utf-8-sig') as infile:
             reader = csv.DictReader(infile)
             fieldnames = reader.fieldnames
             
@@ -76,6 +83,7 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
                     continue
 
                 product_name = row.get('product_name', '')
+                search_card_name = row.get('search_card_name', '')
                 
                 # 過濾 4: 排除 ebay 相關商品 (通常運費高且久)
                 if "ebay" in product_name.lower():
@@ -89,10 +97,17 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
                 if any(keyword in product_name for keyword in exclude_keywords):
                     continue
                 
-                # 過濾 6: 確保商品名稱包含我們要找的卡號
-                # 如果完全沒對應到任何卡號，這可能是不相關的搜尋結果
-                if all_target_ids and not any(target_id in product_name for target_id in all_target_ids):
-                    continue
+                # 過濾 6: 確保商品名稱包含該卡片特定的目標卡號 (Strict Mode)
+                # 只有當商品名稱包含 "該卡片" 指定的 target_ids 中的至少一個時，才保留
+                if search_card_name in card_target_map:
+                    specific_targets = card_target_map[search_card_name]
+                    if specific_targets and not any(target_id in product_name for target_id in specific_targets):
+                        continue
+                else:
+                    # 如果找不到對應的卡片名稱 (可能是舊資料或欄位缺失)，退回使用全域檢查
+                    # 但理想情況下應該都有 search_card_name
+                    if all_target_ids and not any(target_id in product_name for target_id in all_target_ids):
+                        continue
                 
                 # 通過所有檢查，加入保留名單
                 cleaned_rows.append(row)

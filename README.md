@@ -115,4 +115,4 @@ flowchart TB
     * 依照每張卡的`product_id`設立超連結讓使用者能直接點擊去購買商品 格式如下
     `https://www.ruten.com.tw/item/show?product_id`
 
-streamlit run app.py
+啟動程式 `streamlit run app.py`
