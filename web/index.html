@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YGO Scraper Config Generator</title>
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css" />
+    <!-- Dark Mode Support (optional but requested style) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/theme-chalk/dark/css-vars.css">
+    
+    <script type="text/javascript" src="/eel.js"></script>
+    <style>
+        :root {
+            --el-color-primary: #409eff;
+            --sidebar-bg: #1e293b; /* Slate 800 */
+            --sidebar-text: #e2e8f0; /* Slate 200 */
+            --content-bg: #f8fafc; /* Slate 50 */
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+            background-color: var(--content-bg);
+        }
+
+        #app {
+            height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #334155;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding-top: 10px;
+        }
+
+        .menu-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #94a3b8;
+        }
+
+        .menu-item:hover {
+            background-color: #334155;
+            color: white;
+        }
+
+        .menu-item.active {
+            background-color: #2563eb;
+            color: white;
+            border-right: 3px solid #60a5fa;
+        }
+
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid #334155;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-bar {
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .content-body {
+            padding: 30px;
+            flex: 1;
+        }
+
+        /* Card Styles */
+        .config-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .config-card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            font-weight: 600;
+            color: #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .config-card-body {
+            padding: 20px;
+        }
+
+        /* Log Terminal Style */
+        .terminal-window {
+            background-color: #0f172a;
+            color: #4ade80;
+            font-family: 'Consolas', 'Monaco', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-badge.active { background-color: #22c55e; box-shadow: 0 0 5px #22c55e; }
+        .status-badge.inactive { background-color: #94a3b8; }
+        .status-badge.error { background-color: #ef4444; }
+
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span>⚡ YGO Scraper</span>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-item" :class="{ active: activeTab === 'projects' }" @click="activeTab = 'projects'">
+                    <el-icon><Folder /></el-icon>
+                    <span>專案管理</span>
+                </div>
+                <div class="menu-item" :class="{ active: activeTab === 'cart' }" @click="activeTab = 'cart'">
+                    <el-icon><ShoppingCart /></el-icon>
+                    <span>購物車配置</span>
+                </div>
+                <div class="menu-item" :class="{ active: activeTab === 'results' }" @click="activeTab = 'results'">
+                    <el-icon><DataLine /></el-icon>
+                    <span>計算結果</span>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div v-if="currentProject">
+                    <div>當前專案:</div>
+                    <div style="color: #60a5fa; font-weight: bold; margin-top: 5px; word-break: break-all;">
+                        {{ currentProjectName }}
+                    </div>
+                </div>
+                <div v-else>
+                    未選擇專案
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header-bar">
+                <div style="font-size: 1.1rem; font-weight: 500;">
+                    {{ getTabTitle(activeTab) }}
+                </div>
+                <div>
+                    <el-tag v-if="isRunning" type="success" effect="dark" class="ml-2">
+                        <span class="status-badge active" style="background-color: white;"></span>
+                        執行中
+                    </el-tag>
+                    <el-tag v-else type="info" effect="plain" class="ml-2">
+                        <span class="status-badge inactive"></span>
+                        閒置
+                    </el-tag>
+                </div>
+            </header>
+
+            <!-- Body -->
+            <div class="content-body">
+                <transition name="fade" mode="out-in">
+                    
+                    <!-- Projects View -->
+                    <div v-if="activeTab === 'projects'" key="projects">
+                        <div class="row" style="display: flex; gap: 20px;">
+                            <div style="flex: 1;">
+                                <div class="config-card">
+                                    <div class="config-card-header">
+                                        <span>建立新專案</span>
+                                    </div>
+                                    <div class="config-card-body text-center">
+                                        <el-empty description="開始一個新的購買計畫" :image-size="100"></el-empty>
+                                        <el-button type="primary" size="large" @click="createProject" :loading="loading">
+                                            <el-icon class="el-icon--right"><Plus /></el-icon>
+                                            立即建立
+                                        </el-button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="flex: 1;">
+                                <div class="config-card">
+                                    <div class="config-card-header">
+                                        <span>載入現有專案</span>
+                                    </div>
+                                    <div class="config-card-body">
+                                        <el-select v-model="selectedProject" placeholder="選擇專案..." style="width: 100%; margin-bottom: 20px;" size="large">
+                                            <el-option
+                                                v-for="item in projectList"
+                                                :key="item"
+                                                :label="item"
+                                                :value="item">
+                                            </el-option>
+                                        </el-select>
+                                        <el-button type="success" style="width: 100%;" @click="loadProject" :disabled="!selectedProject" :loading="loading">
+                                            載入專案
+                                        </el-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cart View -->
+                    <div v-else-if="activeTab === 'cart'" key="cart">
+                        <div v-if="!currentProject" class="text-center" style="padding-top: 50px; color: #94a3b8;">
+                            <el-icon size="50"><Warning /></el-icon>
+                            <p>請先在「專案管理」載入一個專案</p>
+                        </div>
+                        
+                        <div v-else>
+                            <!-- Global Settings -->
+                            <div class="config-card">
+                                <div class="config-card-header">
+                                    <span>⚙️ 全域設定 (Global Config)</span>
+                                </div>
+                                <div class="config-card-body">
+                                    <el-form :inline="true" label-position="top">
+                                        <el-form-item label="預設運費">
+                                            <el-input-number v-model="cartData.global_settings.default_shipping_cost" :min="0" :step="10"></el-input-number>
+                                        </el-form-item>
+                                        <el-form-item label="賣家最低消費">
+                                            <el-input-number v-model="cartData.global_settings.min_purchase_limit" :min="0" :step="50"></el-input-number>
+                                        </el-form-item>
+                                    </el-form>
+                                    
+                                    <el-divider></el-divider>
+                                    
+                                    <div style="margin-bottom: 20px;">
+                                        <div style="margin-bottom: 10px; font-size: 14px; color: #606266;">排除關鍵字 (Excluded Keywords)</div>
+                                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                            <el-tag
+                                                v-for="tag in cartData.global_settings.global_exclude_keywords"
+                                                :key="tag"
+                                                closable
+                                                :disable-transitions="false"
+                                                @close="handleClose(cartData.global_settings.global_exclude_keywords, tag)">
+                                                {{ tag }}
+                                            </el-tag>
+                                            <el-input
+                                                v-if="inputVisibleKeywords"
+                                                ref="keywordInputRef"
+                                                v-model="inputValueKeywords"
+                                                style="width: 100px;"
+                                                size="small"
+                                                @keyup.enter="handleInputConfirmKeywords"
+                                                @blur="handleInputConfirmKeywords"
+                                            ></el-input>
+                                            <el-button v-else size="small" @click="showInputKeywords">
+                                                + New Tag
+                                            </el-button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div style="margin-bottom: 10px; font-size: 14px; color: #606266;">賣家黑名單 (Seller Blacklist)</div>
+                                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                            <el-tag
+                                                v-for="tag in cartData.global_settings.global_exclude_seller"
+                                                :key="tag"
+                                                type="danger"
+                                                closable
+                                                :disable-transitions="false"
+                                                @close="handleClose(cartData.global_settings.global_exclude_seller, tag)">
+                                                {{ tag }}
+                                            </el-tag>
+                                            <el-input
+                                                v-if="inputVisibleSellers"
+                                                ref="sellerInputRef"
+                                                v-model="inputValueSellers"
+                                                style="width: 150px;"
+                                                size="small"
+                                                placeholder="Seller ID"
+                                                @keyup.enter="handleInputConfirmSellers"
+                                                @blur="handleInputConfirmSellers"
+                                            ></el-input>
+                                            <el-button v-else size="small" @click="showInputSellers">
+                                                + Add Seller
+                                            </el-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cart Items -->
+                            <div class="config-card">
+                                <div class="config-card-header">
+                                    <span>🛒 購物清單</span>
+                                    <el-button type="primary" size="small" @click="addCartItem">
+                                        <el-icon><Plus /></el-icon> 新增卡片
+                                    </el-button>
+                                </div>
+                                <div class="config-card-body" style="background-color: #f8fafc;">
+                                    <div v-for="(item, index) in cartData.shopping_cart" :key="index" class="config-card" style="margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                                        <div class="config-card-header" style="background: white; padding: 10px 20px;">
+                                            <span style="font-size: 0.9rem; font-weight: bold;">#{{ index + 1 }} {{ item.card_name_zh || '未命名' }}</span>
+                                            <el-button type="danger" link @click="removeCartItem(index)">
+                                                <el-icon><Delete /></el-icon>
+                                            </el-button>
+                                        </div>
+                                        <div class="config-card-body" style="padding: 15px;">
+                                            <el-row :gutter="20">
+                                                <el-col :span="6">
+                                                    <div style="margin-bottom: 5px; font-size: 12px; color: #909399;">卡片名稱</div>
+                                                    <el-input v-model="item.card_name_zh" placeholder="中文名稱"></el-input>
+                                                </el-col>
+                                                <el-col :span="4">
+                                                    <div style="margin-bottom: 5px; font-size: 12px; color: #909399;">需求數量</div>
+                                                    <el-input-number v-model="item.required_amount" :min="1" style="width: 100%;"></el-input-number>
+                                                </el-col>
+                                                <el-col :span="14">
+                                                    <div style="margin-bottom: 5px; font-size: 12px; color: #909399;">卡號清單 (Target IDs)</div>
+                                                    <div style="display: flex; gap: 8px; flex-wrap: wrap; padding: 5px; border: 1px solid #dcdfe6; border-radius: 4px; background: white; min-height: 40px;">
+                                                        <el-tag
+                                                            v-for="tag in item.target_ids"
+                                                            :key="tag"
+                                                            closable
+                                                            effect="plain"
+                                                            @close="handleClose(item.target_ids, tag)">
+                                                            {{ tag }}
+                                                        </el-tag>
+                                                        <el-input
+                                                            v-if="item.ui_inputVisible"
+                                                            :id="'save-tag-input-' + index"
+                                                            v-model="item.ui_inputValue"
+                                                            style="width: 120px;"
+                                                            size="small"
+                                                            placeholder="New ID + Enter"
+                                                            @keyup.enter="handleInputConfirmItem(item)"
+                                                            @blur="handleInputConfirmItem(item)"
+                                                        ></el-input>
+                                                        <el-button v-else size="small" @click="showInputItem(item, index)">
+                                                            + ID
+                                                        </el-button>
+                                                    </div>
+                                                </el-col>
+                                            </el-row>
+                                        </div>
+                                    </div>
+                                    <div v-if="cartData.shopping_cart.length === 0" class="text-center text-muted">
+                                        暫無商品
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="config-card">
+                                <div class="config-card-header">
+                                    <span>🚀 執行</span>
+                                </div>
+                                <div class="config-card-body">
+                                    <el-button type="primary" size="large" @click="saveAndRun" :loading="isRunning" style="width: 100%;">
+                                        儲存設定並開始計算 (Save & Run)
+                                    </el-button>
+                                    
+                                    <div style="margin-top: 20px;">
+                                        <div style="margin-bottom: 5px; font-weight: bold; color: #64748b;">System Output:</div>
+                                        <div class="terminal-window" ref="logTerminal">
+                                            {{ logContent }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results View -->
+                    <div v-else-if="activeTab === 'results'" key="results">
+                         <div v-if="!resultsData" class="text-center" style="padding-top: 50px; color: #94a3b8;">
+                            <el-icon size="50"><Document /></el-icon>
+                            <p>尚未產生計算結果</p>
+                            <el-button @click="loadResults" v-if="currentProject">嘗試重新載入</el-button>
+                        </div>
+                        <div v-else>
+                            <!-- Summary Cards -->
+                            <el-row :gutter="20" style="margin-bottom: 20px;">
+                                <el-col :span="8">
+                                    <el-card shadow="hover">
+                                        <template #header>總金額 (Total)</template>
+                                        <div style="font-size: 1.5rem; font-weight: bold; color: #ef4444;">
+                                            $ {{ resultsData.summary.grand_total }}
+                                        </div>
+                                    </el-card>
+                                </el-col>
+                                <el-col :span="8">
+                                    <el-card shadow="hover">
+                                        <template #header>商品總額 (Items)</template>
+                                        <div style="font-size: 1.5rem;">
+                                            $ {{ resultsData.summary.total_items_cost }}
+                                        </div>
+                                    </el-card>
+                                </el-col>
+                                <el-col :span="8">
+                                    <el-card shadow="hover">
+                                        <template #header>總運費 (Shipping)</template>
+                                        <div style="font-size: 1.5rem; color: #64748b;">
+                                            $ {{ resultsData.summary.total_shipping_cost }}
+                                        </div>
+                                    </el-card>
+                                </el-col>
+                            </el-row>
+
+                            <!-- Sellers List -->
+                            <h3>購買清單 (需向 {{ resultsData.summary.sellers_count }} 位賣家購買)</h3>
+                            
+                            <el-collapse v-model="activeSellers" accordion>
+                                <el-collapse-item v-for="(seller, sellerId) in resultsData.sellers" :key="sellerId" :name="sellerId">
+                                    <template #title>
+                                        <div style="display: flex; justify-content: space-between; width: 100%; padding-right: 20px;">
+                                            <span style="font-weight: bold;">賣家: {{ sellerId }}</span>
+                                            <span>小計: <span style="color: #ef4444; font-weight: bold;">$ {{ seller.items_subtotal }}</span></span>
+                                        </div>
+                                    </template>
+                                    
+                                    <el-table :data="seller.items" style="width: 100%" stripe>
+                                        <el-table-column prop="product_name" label="商品名稱" min-width="200">
+                                            <template #default="scope">
+                                                <a :href="'https://www.ruten.com.tw/item/show?' + scope.row.product_id" target="_blank" style="text-decoration: none; color: #409eff;">
+                                                    {{ scope.row.product_name }}
+                                                </a>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column prop="price" label="單價" width="100">
+                                            <template #default="scope">$ {{ scope.row.price }}</template>
+                                        </el-table-column>
+                                        <el-table-column prop="buy_qty" label="數量" width="80"></el-table-column>
+                                        <el-table-column label="小計" width="100">
+                                            <template #default="scope">$ {{ scope.row.price * scope.row.buy_qty }}</template>
+                                        </el-table-column>
+                                    </el-table>
+                                </el-collapse-item>
+                            </el-collapse>
+                        </div>
+                    </div>
+
+                </transition>
+            </div>
+        </main>
+    </div>
+
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.js"></script>
+    <!-- Element Plus JS -->
+    <script src="https://cdn.jsdelivr.net/npm/element-plus/dist/index.full.js"></script>
+    <!-- Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue"></script>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
