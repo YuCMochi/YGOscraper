@@ -3,6 +3,7 @@ import argparse
 import os
 import re
 import json
+import csv
 import time
 import random
 import logging
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Konami 遊戲王卡片資料爬蟲')
     # 支援輸入多個 CID，使用逗號分隔，例如: --cids 4007,4008,4009
     parser.add_argument('--cids', type=str, default='4007', help='Card IDs (逗號分隔，例如: 4007,4008)')
-    parser.add_argument('--output', type=str, help='輸出 JSON 檔案路徑')
+    parser.add_argument('--output', type=str, help='輸出 CSV 檔案路徑')
     args = parser.parse_args()
     
     # 處理輸入的 CID 列表，去除空格並分割
@@ -195,14 +196,23 @@ if __name__ == "__main__":
     scraper = KonamiScraper()
     all_data = scraper.scrape_cids(cid_list)
     
-    # 輸出結果到 JSON 檔案
+    # 輸出結果到 CSV 檔案
     if all_data:
-        # 如果使用者沒有指定檔名，則使用預設檔名 konami_cards_data.json
-        output_file = args.output if args.output else f"konami_cards_data.json"
+        # 如果使用者沒有指定檔名，則使用預設檔名 konami_cards_data.csv
+        output_file = args.output if args.output else f"konami_cards_data.csv"
         
         try:
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(all_data, f, ensure_ascii=False, indent=2)
+            with open(output_file, "w", encoding="utf-8", newline='') as f:
+                fieldnames = ['cid', 'card_number', 'pack_name', 'rarity_id', 'rarity_name']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                
+                writer.writeheader()
+                for cid, versions in all_data.items():
+                    for version in versions:
+                        row = version.copy()
+                        row['cid'] = cid
+                        writer.writerow(row)
+                        
             logger.info(f"所有資料已成功儲存至 {output_file}")
             
             # 在終端機顯示簡單的結果摘要
