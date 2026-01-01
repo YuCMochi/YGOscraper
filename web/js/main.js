@@ -205,6 +205,64 @@ const app = createApp({
             item.ui_inputValue = '';
         }
 
+        // --- Search/Query Module Integration ---
+        
+        function openSearch() {
+            window.open('query_module/index.html', 'CardSearch', 'width=1000,height=800');
+        }
+
+        // Listen for messages from the search window
+        window.addEventListener('message', async (event) => {
+            if (event.data && event.data.type === 'ADD_CARD') {
+                const { cid, name, id } = event.data;
+                console.log("Received card:", name, cid, id);
+                
+                if (!cid) {
+                     ElementPlus.ElMessage.warning(`此卡片 (${name}) 無法對應到 Konami ID (CID)`);
+                     return;
+                }
+
+                try {
+                    // Fetch card details (versions) from Konami using scraper
+                    const versions = await eel.fetch_card_details(cid)();
+                    
+                    if (versions && versions.length > 0) {
+                        // Extract card numbers
+                        const cardNumbers = versions.map(v => v.card_number).filter(n => n);
+                        // Unique numbers
+                        const uniqueNumbers = [...new Set(cardNumbers)];
+
+                        if (uniqueNumbers.length > 0) {
+                             cartData.shopping_cart.push({
+                                card_name_zh: name,
+                                required_amount: 3,
+                                target_card_numbers: uniqueNumbers,
+                                ui_inputVisible: false,
+                                ui_inputValue: ''
+                            });
+                            ElementPlus.ElMessage.success(`已加入卡片: ${name} (找到 ${uniqueNumbers.length} 種版本)`);
+                        } else {
+                            ElementPlus.ElMessage.warning(`找到卡片 ${name} 但無有效編號`);
+                        }
+                    } else {
+                        ElementPlus.ElMessage.warning(`無法從 Konami 資料庫抓取到 ${name} (CID: ${cid}) 的詳細資料`);
+                         // Fallback: Add just the name, user has to fill numbers
+                         cartData.shopping_cart.push({
+                                card_name_zh: name,
+                                required_amount: 3,
+                                target_card_numbers: [],
+                                ui_inputVisible: false,
+                                ui_inputValue: ''
+                            });
+                    }
+
+                } catch (e) {
+                    console.error("Error processing card add:", e);
+                    ElementPlus.ElMessage.error("加入卡片時發生錯誤");
+                }
+            }
+        });
+
         // --- End Tag Handling ---
 
         async function saveAndRun() {
@@ -316,7 +374,8 @@ const app = createApp({
             showInputSellers,
             handleInputConfirmSellers,
             showInputItem,
-            handleInputConfirmItem
+            handleInputConfirmItem,
+            openSearch
         };
     }
 });

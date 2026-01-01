@@ -5,9 +5,27 @@ import sys
 import subprocess
 import time
 from file_genarator import FileGenerator
+from konami_scraper import KonamiScraper
 
 # Initialize Eel with the web directory
 eel.init('web')
+
+# Initialize Konami Scraper
+konami_scraper = KonamiScraper()
+
+@eel.expose
+def fetch_card_details(cid):
+    """Fetches card details using KonamiScraper given a CID."""
+    try:
+        print(f"Fetching details for CID: {cid}")
+        # scrape_cids returns a dict {cid: [versions]}
+        data = konami_scraper.scrape_cids([str(cid)])
+        if data and str(cid) in data:
+            return data[str(cid)]
+        return []
+    except Exception as e:
+        print(f"Error fetching card details: {e}")
+        return []
 
 @eel.expose
 def get_project_list():

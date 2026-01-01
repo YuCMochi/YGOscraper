@@ -348,9 +348,14 @@
                             <div class="config-card">
                                 <div class="config-card-header">
                                     <span>🛒 購物清單</span>
-                                    <el-button type="primary" size="small" @click="addCartItem">
-                                        <el-icon><Plus /></el-icon> 新增卡片
-                                    </el-button>
+                                    <div>
+                                        <el-button type="success" size="small" @click="openSearch">
+                                            <el-icon><Search /></el-icon> 搜尋卡片
+                                        </el-button>
+                                        <el-button type="primary" size="small" @click="addCartItem">
+                                            <el-icon><Plus /></el-icon> 新增卡片
+                                        </el-button>
+                                    </div>
                                 </div>
                                 <div class="config-card-body" style="background-color: #f8fafc;">
                                     <div v-for="(item, index) in cartData.shopping_cart" :key="index" class="config-card" style="margin-bottom: 15px; border: 1px solid #e2e8f0;">

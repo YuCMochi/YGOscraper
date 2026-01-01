@@ -1,0 +1,185 @@
+@font-face {
+	font-family: '新微軟正黑體';
+	unicode-range: U+7DB0, U+78A7, U+7B75;
+	font-style: normal;
+	font-weight: bold;
+	src: local(Yu Gothic), local(MS Gothic);
+}
+
+@font-face {
+	font-family: '新微軟正黑體';
+	unicode-range: U+7DB0, U+78A7, U+7B75;
+	font-style: normal;
+	font-weight: normal;
+	src: local(Microsoft JhengHei);
+}
+
+body {
+	font-family: '新微軟正黑體', 'Microsoft JhengHei', sans-serif;
+	background-color: #cccccc;
+}
+
+table.hidden {
+	border-style: none;
+	margin: 0 auto;
+}
+
+table.hidden td {
+	padding: 5px 0px;
+}
+
+.align_center {
+	text-align: center;
+}
+
+.clear {
+	color: Red;
+}
+
+label.F {
+	background: #A086B7;
+	color: Black;
+}
+
+label.S {
+	background: White;
+	color: Black;
+}
+
+label.X {
+	background: Black;
+	color: White;
+}
+
+label.L {
+	background: Blue;
+	color: White;
+}
+
+.count {
+	margin: 0 auto;
+	padding: 10px 0px;
+}
+
+table.result {
+	border-collapse: collapse;
+	margin: 0 auto;
+	border-top: 1px solid black;
+}
+
+td.pic {
+	vertical-align: top;
+	padding: 2%;
+}
+
+img.pic {
+	max-height: 100%;
+	max-width: 100%;
+}
+
+td.data {
+	vertical-align: top;
+	padding: 2%;
+}
+
+td.effect {
+	border-bottom: 1px solid black;
+	vertical-align: top;
+	padding: 2%;
+}
+
+.minor {
+	font-size: 14px;
+}
+
+.stat {
+	color: Blue;
+}
+
+hr {
+	opacity: 0.4;
+}
+
+.marker span {
+	padding: 5px;
+	display: inline-block;
+	font-family: sans-serif;
+}
+
+.t {
+	color: Red;
+}
+
+.f {
+	opacity: 0.4;
+}
+
+.ul {
+	transform: rotate(-45deg);
+}
+
+.ur {
+	transform: rotate(45deg);
+}
+
+.l {
+	transform: rotate(-90deg);
+}
+
+.r {
+	transform: rotate(90deg);
+}
+
+.dl {
+	transform: rotate(-135deg);
+}
+
+.d {
+	transform: rotate(180deg);
+}
+
+.dr {
+	transform: rotate(135deg);
+}
+
+button.submit {
+	padding: 5px 20px;
+}
+
+.invisible {
+	visibility: hidden;
+}
+
+.transparent {
+	opacity: 0;
+}
+
+input[type="checkbox"] {
+	display: none;
+}
+
+input:checked+.button {
+	background: #5e7380;
+	color: #fff;
+}
+
+.button {
+	display: inline-block;
+	margin: 0 5px 5px 0;
+	padding: 5px 10px;
+	background: #ddd;
+}
+
+.button:hover {
+	background: #bbb;
+	color: #fff;
+}
+
+#row_marker .marker {
+	margin: 0 3px 3px 0;
+	padding: 2px 5px;
+}
+
+#row_marker input:checked+.marker {
+	background: Red
+}

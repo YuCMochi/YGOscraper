@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="author" content="salix5">
+	<meta name="description" content="從輸入的起點與終點搜尋中間的跳板。">
+	<title>小世界跳板搜尋</title>
+	<link href="main.css" rel="stylesheet">
+</head>
+<body>
+	<form id="form1" autocomplete="off">
+	<table class="hidden">
+	<tr><td>起點</td><td><input type="search" id="text_id1" name="begin" maxlength="100" required></td></tr>
+	<tr><td>終點</td><td><input type="search" id="text_id2" name="end" maxlength="100" required></td></tr>
+	
+	<tr><td>卡名</td><td><input type="search" id="text_name" name="cname" maxlength="200">
+	<select id="select_locale" name="locale">
+		<option value="">OCG</option>
+		<option value="en">TCG</option>
+	</select>
+	</td></tr>
+	<tr><td>效果</td><td><input type="search" id="text_effect" name="desc" maxlength="200"></td></tr>
+	<tr><td>關鍵字</td><td><input type="search" id="text_keyword" name="keyword" maxlength="200"></td></tr>
+	
+	<tr><td>卡包</td>
+	<td>
+		<select id="select_pack" name="pack">
+			<option value=""></option>
+			<optgroup label="書籍附錄">
+				<option value="YOS3">OCG Stories 6卷</option>
+				<option value="YO11">OCG構築 11卷</option>
+				<option value="VJMP">V JUMP</option>
+			</optgroup>
+			<optgroup label="13期補充包">
+				<option value="BLZD">BLZD (1304)</option>
+				<option value="BPRO">BPRO (1303)</option>
+				<option value="DOOD">DOOD (1302)</option>
+				<option value="DUAD">DUAD (1301)</option>
+			</optgroup>
+			<optgroup label="12期補充包">
+				<option value="ALIN">ALIN (1208)</option>
+				<option value="SUDA">SUDA (1207)</option>
+				<option value="ROTA">ROTA (1206)</option>
+				<option value="INFO">INFO (1205)</option>
+				<option value="LEDE">LEDE (1204)</option>
+				<option value="PHNI">PHNI (1203)</option>
+				<option value="AGOV">AGOV (1202)</option>
+				<option value="DUNE">DUNE (1201)</option>
+			</optgroup>
+			<optgroup label="11期補充包">
+				<option value="CYAC">CYAC (1112)</option>
+				<option value="PHHY">PHHY (1111)</option>
+				<option value="DABL">DABL (1110)</option>
+				<option value="POTE">POTE (1109)</option>
+				<option value="DIFO">DIFO (1108)</option>
+				<option value="BACH">BACH (1107)</option>
+				<option value="BODE">BODE (1106)</option>
+				<option value="DAMA">DAMA (1105)</option>
+				<option value="LIOV">LIOV (1104)</option>
+				<option value="BLVO">BLVO (1103)</option>
+				<option value="PHRA">PHRA (1102)</option>
+				<option value="ROTD">ROTD (1101)</option>
+			</optgroup>
+			<optgroup label="終端世界">
+				<option value="TW03">TW03 (Terminal World 3)</option>
+				<option value="TW02">TW02 (Terminal World 2)</option>
+				<option value="TW01">TW01 (Terminal World)</option>
+			</optgroup>
+			<optgroup label="構築包">
+				<option value="DBPR">DBPR</option>
+				<option value="DBJH">DBJH</option>
+				<option value="DBCB">DBCB</option>
+				<option value="DBVS">DBVS</option>
+				<option value="DBWS">DBWS</option>
+				<option value="DBAD">DBAD</option>
+				<option value="DBTM">DBTM</option>
+				<option value="DBGC">DBGC</option>
+				<option value="DBAG">DBAG</option>
+			</optgroup>
+			<optgroup label="決鬥者卡包">
+				<option value="DP29">DP29</option>
+				<option value="DP28">DP28</option>
+				<option value="DP27">DP27</option>
+				<option value="DP26">DP26</option>
+				<option value="DP25">DP25</option>
+			</optgroup>
+			<optgroup label="動畫卡包">
+				<option value="AC04">AC04</option>
+				<option value="AC03">AC03</option>
+				<option value="AC02">AC02</option>
+				<option value="AC01">AC01</option>
+			</optgroup>
+			<optgroup label="大會包">
+				<option value="26PR">26PR (Jump Festa 2026)</option>
+				<option value="26PP">26PP (大會包2026)</option>
+				<option value="25PR">25PR (Jump Festa 2025)</option>
+				<option value="25PP">25PP (大會包2025)</option>
+				<option value="TDPR">TDPR (決鬥者傳說)</option>
+				<option value="24PR">24PR (Jump Festa 2024)</option>
+				<option value="24PP">24PP (大會包2024)</option>
+				<option value="23PR">23PR (Jump Festa 2023)</option>
+				<option value="23PP">23PP (大會包2023)</option>
+				<option value="22PP">22PP (大會包2022)</option>
+			</optgroup>
+			<optgroup label="海外包">
+				<option value="WPP6">WPP6</option>
+				<option value="WPP5">WPP5</option>
+				<option value="WPP4">WPP4</option>
+				<option value="WPP3">WPP3</option>
+				<option value="WPP2">WPP2</option>
+				<option value="WPP1">WPP1</option>
+			</optgroup>
+			<optgroup label="套牌">
+				<option value="SD48">SD48 (同伴之力)</option>
+				<option value="SD47">SD47 (青之眼的光臨)</option>
+				<option value="SD46">SD46 (王者的鼓動)</option>
+				<option value="SD45">SD45 (蟲惑魔的森林)</option>
+				<option value="SD44">SD44 (寶玉的傳說)</option>
+				<option value="SD43">SD43 (Alba Strike)</option>
+				<option value="SD42">SD42 (疊放宇宙)</option>
+				<option value="SD41">SD41 (電子流的後繼者)</option>
+				<option value="SD40">SD40 (凍獄的冰結界)</option>
+				<option value="SD39">SD39 (精靈術的操控者)</option>
+			</optgroup>
+			<optgroup label="套牌R">
+				<option value="SR14">SR14 (炎王的急襲)</option>
+				<option value="SR13">SR13 (惡魔之門)</option>
+				<option value="SR12">SR12 (失落的聖域)</option>
+				<option value="SR11">SR11 (龍盟驅動)</option>
+			</optgroup>
+			<optgroup label="編年史套牌">
+				<option value="CH02">CH02 (精靈術的操控者)</option>
+				<option value="CH01">CH01 (白之故事)</option>
+			</optgroup>
+			<optgroup label="其他">
+				<option value="LOCR">LOCR (超越極限包 Rivals)</option>
+				<option value="LOCH">LOCH (超越極限包 Heroes)</option>
+				<option value="25DB">25DB (聖誕禮盒2025)</option>
+				<option value="TTP1">TTP1 (TACTICAL-TRY PACK 1)</option>
+				<option value="QCTB">QCTB (聖誕禮盒2024)</option>
+				<option value="CF01">CF01 (完全卡冊 白之故事)</option>
+				<option value="QCDB">QCDB (聖誕禮盒2023)</option>
+				<option value="SUB1">SUB1 (聖誕禮盒2022)</option>
+				<option value="SLF1">SLF1 (Selection 5)</option>
+				<option value="HC01">HC01 (歷代包)</option>
+				<option value="SSB1">SSB1 (聖誕禮盒2021)</option>
+			</optgroup>
+			<optgroup label="TCG">
+				<option value="_DOOD">DOOD-EN</option>
+				<option value="_DUAD">DUAD-EN</option>
+				<option value="t">TCG特有卡</option>
+				<option value="o">排除TCG特有卡</option>
+			</optgroup>
+		</select>
+	</td>
+	</tr>
+	
+	<tr class="monster_row">
+		<td>屬性</td>
+		<td><button id="attr_reset" class="clear" type="button">✗</button></td>
+	</tr>
+	<tr class="monster_row"><td colspan="2">
+		<label><input type="checkbox" id="attr1" name="attr" value="1"><span class="button">地</span></label>
+		<label><input type="checkbox" id="attr2" name="attr" value="2"><span class="button">水</span></label>
+		<label><input type="checkbox" id="attr3" name="attr" value="3"><span class="button">炎</span></label>
+		<label><input type="checkbox" id="attr4" name="attr" value="4"><span class="button">風</span></label>
+		<label><input type="checkbox" id="attr5" name="attr" value="5"><span class="button">光</span></label>
+		<label><input type="checkbox" id="attr6" name="attr" value="6"><span class="button">闇</span></label>
+		<label><input type="checkbox" id="attr7" name="attr" value="7"><span class="button">神</span></label>
+	</td>
+	</tr>
+	
+	<tr class="monster_row">
+		<td>種族</td>
+		<td><button id="race_reset" class="clear" type="button">✗</button></td>
+	</tr>
+	<tr class="monster_row"><td colspan="2">
+		<div>
+			<label><input type="checkbox" id="race1" name="race" value="1"><span class="button">水&emsp;</span></label>
+			<label><input type="checkbox" id="race2" name="race" value="2"><span class="button">炎&emsp;</span></label>
+			<label><input type="checkbox" id="race3" name="race" value="3"><span class="button">雷&emsp;</span></label>
+			<label><input type="checkbox" id="race4" name="race" value="4"><span class="button">龍&emsp;</span></label>
+			<label><input type="checkbox" id="race5" name="race" value="5"><span class="button">獸&emsp;</span></label><span class="invisible">&emsp;&emsp;</span>
+		</div>
+		<div>
+			<label><input type="checkbox" id="race6" name="race" value="6"><span class="button">魚&emsp;</span></label>
+			<label><input type="checkbox" id="race7" name="race" value="7"><span class="button">天使</span></label>
+			<label><input type="checkbox" id="race8" name="race" value="8"><span class="button">惡魔</span></label>
+			<label><input type="checkbox" id="race9" name="race" value="9"><span class="button">不死</span></label>
+			<label><input type="checkbox" id="race10" name="race" value="10"><span class="button">戰士</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="race11" name="race" value="11"><span class="button">恐龍</span></label>
+			<label><input type="checkbox" id="race12" name="race" value="12"><span class="button">鳥獸</span></label>
+			<label><input type="checkbox" id="race13" name="race" value="13"><span class="button">昆蟲</span></label>
+			<label><input type="checkbox" id="race14" name="race" value="14"><span class="button">植物</span></label>
+			<label><input type="checkbox" id="race15" name="race" value="15"><span class="button">海龍</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="race16" name="race" value="16"><span class="button">岩石</span></label>
+			<label><input type="checkbox" id="race17" name="race" value="17"><span class="button">機械</span></label>
+			<label><input type="checkbox" id="race18" name="race" value="18"><span class="button">超能</span></label>
+			<label><input type="checkbox" id="race19" name="race" value="19"><span class="button">幻龍</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="race20" name="race" value="20"><span class="button">魔法使</span></label>
+			<label><input type="checkbox" id="race21" name="race" value="21"><span class="button">獸戰士</span></label>
+			<label><input type="checkbox" id="race22" name="race" value="22"><span class="button">爬蟲類</span></label>
+			<label><input type="checkbox" id="race23" name="race" value="23"><span class="button">幻神獸</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="race24" name="race" value="24"><span class="button">創造神</span></label>
+			<label><input type="checkbox" id="race25" name="race" value="25"><span class="button">電子界</span></label>
+			<label><input type="checkbox" id="race26" name="race" value="26"><span class="button">幻想魔</span></label>
+		</div>
+	</td>
+	</tr>
+	
+	<tr class="row_subtype">
+		<td>類型</td>
+		<td>
+			<span id="subtype_operator">
+				<select id="select_subtype_op" name="mtype_operator">
+					<option value="0">OR</option>
+					<option value="1">AND</option>
+				</select>
+				&emsp;
+			</span>
+			<button id="subtype_reset" class="clear" type="button">✗</button>
+		</td>
+	</tr>
+	<tr class="row_subtype"><td colspan="2">
+	<div id="subtype_m">
+		<input type="hidden" id="mtype1" name="mtype" disabled>
+		<input type="hidden" id="mtype2" name="mtype" disabled>
+		<input type="hidden" id="mtype3" name="mtype" disabled>
+		<input type="hidden" id="mtype4" name="mtype" disabled>
+		<div>
+			<label><input type="checkbox" id="mtype5" name="mtype" value="5"><span class="button">通常</span></label>
+			<label><input type="checkbox" id="mtype6" name="mtype" value="6"><span class="button">效果</span></label>
+			<label><input type="checkbox" id="mtype7" name="mtype" value="7"><span class="button">儀式</span></label>
+			<label><input type="checkbox" id="mtype8" name="mtype" value="8"><span class="button">靈擺</span></label>
+			<label><input type="checkbox" id="mtype9" name="mtype" value="9"><span class="button">卡通</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="mtype10" name="mtype" value="10"><span class="button">靈魂</span></label>
+			<label><input type="checkbox" id="mtype11" name="mtype" value="11"><span class="button">聯合</span></label>
+			<label><input type="checkbox" id="mtype12" name="mtype" value="12"><span class="button">二重</span></label>
+			<label><input type="checkbox" id="mtype13" name="mtype" value="13"><span class="button">協調</span></label>
+			<label><input type="checkbox" id="mtype14" name="mtype" value="14"><span class="button">反轉</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="mtype15" name="mtype" value="15"><span class="button">特殊召喚</span></label>
+		</div>
+	</div>
+	</td>
+	</tr>
+	
+	<tr class="row_exclude">
+		<td>排除</td>
+		<td><button id="exclude_reset" class="clear" type="button">✗</button></td>
+	</tr>
+	<tr class="row_exclude"><td colspan="2">
+		<input type="hidden" id="exclude_type1" name="exclude" disabled>
+		<input type="hidden" id="exclude_type2" name="exclude" disabled>
+		<input type="hidden" id="exclude_type3" name="exclude" disabled>
+		<input type="hidden" id="exclude_type4" name="exclude" disabled>
+		<div>
+			<label><input type="checkbox" id="exclude_type5" name="exclude" value="5"><span class="button">通常</span></label>
+			<label><input type="checkbox" id="exclude_type6" name="exclude" value="6"><span class="button">效果</span></label>
+			<label><input type="checkbox" id="exclude_type7" name="exclude" value="7"><span class="button">儀式</span></label>
+			<label><input type="checkbox" id="exclude_type8" name="exclude" value="8"><span class="button">靈擺</span></label>
+			<label><input type="checkbox" id="exclude_type9" name="exclude" value="9"><span class="button">卡通</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="exclude_type10" name="exclude" value="10"><span class="button">靈魂</span></label>
+			<label><input type="checkbox" id="exclude_type11" name="exclude" value="11"><span class="button">聯合</span></label>
+			<label><input type="checkbox" id="exclude_type12" name="exclude" value="12"><span class="button">二重</span></label>
+			<label><input type="checkbox" id="exclude_type13" name="exclude" value="13"><span class="button">協調</span></label>
+			<label><input type="checkbox" id="exclude_type14" name="exclude" value="14"><span class="button">反轉</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="exclude_type15" name="exclude" value="15"><span class="button">特殊召喚</span></label>
+		</div>
+	</td>
+	</tr>
+	
+	<tr class="monster_row">
+		<td>星數</td>
+		<td><button id="level_reset" class="clear" type="button">✗</button></td>
+	</tr>
+	<tr class="monster_row">
+		<td colspan="2">
+			<div>
+				<label><input type="checkbox" id="level0" name="level" value="0"><span class="button">0&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level1" name="level" value="1"><span class="button">1&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level2" name="level" value="2"><span class="button">2&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level3" name="level" value="3"><span class="button">3&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level4" name="level" value="4"><span class="button">4&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level5" name="level" value="5"><span class="button">5&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level6" name="level" value="6"><span class="button">6&nbsp;&nbsp;</span></label>
+			</div>
+			<div>
+				<label><input type="checkbox" id="level7" name="level" value="7"><span class="button">7&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level8" name="level" value="8"><span class="button">8&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level9" name="level" value="9"><span class="button">9&nbsp;&nbsp;</span></label>
+				<label><input type="checkbox" id="level10" name="level" value="10"><span class="button">10</span></label>
+				<label><input type="checkbox" id="level11" name="level" value="11"><span class="button">11</span></label>
+				<label><input type="checkbox" id="level12" name="level" value="12"><span class="button">12</span></label>
+				<label><input type="checkbox" id="level13" name="level" value="13"><span class="button">13</span></label>
+			</div>
+		</td>
+	</tr>
+	
+	<tr class="monster_row">
+		<td>刻度</td>
+		<td><button id="scale_reset" class="clear" type="button">✗</button></td>
+	</tr>
+	<tr class="monster_row"><td colspan="2">
+		<div>
+			<label><input type="checkbox" id="scale0" name="scale" value="0"><span class="button">0&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale1" name="scale" value="1"><span class="button">1&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale2" name="scale" value="2"><span class="button">2&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale3" name="scale" value="3"><span class="button">3&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale4" name="scale" value="4"><span class="button">4&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale5" name="scale" value="5"><span class="button">5&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale6" name="scale" value="6"><span class="button">6&nbsp;&nbsp;</span></label>
+		</div>
+		<div>
+			<label><input type="checkbox" id="scale7" name="scale" value="7"><span class="button">7&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale8" name="scale" value="8"><span class="button">8&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale9" name="scale" value="9"><span class="button">9&nbsp;&nbsp;</span></label>
+			<label><input type="checkbox" id="scale10" name="scale" value="10"><span class="button">10</span></label>
+			<label><input type="checkbox" id="scale11" name="scale" value="11"><span class="button">11</span></label>
+			<label><input type="checkbox" id="scale12" name="scale" value="12"><span class="button">12</span></label>
+			<label><input type="checkbox" id="scale13" name="scale" value="13"><span class="button">13</span></label>
+		</div>
+	</td>
+	</tr>
+	
+	<tr class="monster_row">
+		<td>攻擊力</td>
+		<td></td>
+	</tr>
+	<tr class="monster_row"><td colspan="2">
+	<input type="number" id="text_atk1" name="atk_from" min="-1" max="100000" style="width: 5em">
+	～
+	<input type="number" id="text_atk2" name="atk_to" min="-1" max="100000" style="width: 5em"> (-1 = ?)
+	</td>
+	</tr>
+	
+	<tr class="monster_row">
+		<td>守備力</td>
+		<td></td>
+	</tr>
+	<tr class="monster_row"><td colspan="2">
+	<input type="number" id="text_def1" name="def_from" min="-2" max="100000" style="width: 5em">
+	～
+	<input type="number" id="text_def2" name="def_to" min="-1" max="100000" style="width: 5em"> (-2 = 攻守相等)
+	</td>
+	</tr>
+	
+	<tr class="monster_row">
+		<td>總和</td>
+		<td></td>
+	</tr>
+	<tr class="monster_row"><td colspan="2">
+	<input type="number" id="text_sum" name="sum" min="0" max="100000" style="width: 5em">
+	</td>
+	</tr>
+	
+	<tr class="align_center">
+		<td colspan="2">
+		<button id="button1" class="submit" disabled>搜尋</button>
+		&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+		<button id="button2" class="submit" type="reset" disabled>重設</button>
+		</td>
+	</tr>
+	</table>
+	</form>
+	
+	<div class="count" id="div_count" hidden></div>
+	<table class="result" id="table_result">
+	</table>
+	<div class="count" id="div_page" hidden>
+		<select id="select_page"></select>
+	</div>
+	
+	<script src="constant.js"></script>
+	<script src="event_handler_sw.js"></script>
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/sql-wasm.js" integrity="sha512-tz0jOZaOg9RtWWB6AdxSkINQwIs7S5obj1Dlml9KewZLPTblTWCux5eLtnexBb8kbLUo5crPmjsi8/vI17Vw0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="ygo-json-loader.js"></script>
+	<script src="ygo-query.js"></script>
+	<script src="submit_query_sw.js"></script>
+	<script src="query.js"></script>
+	<script src="result.js"></script>
+</body>
+</html>
