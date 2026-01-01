@@ -33,19 +33,20 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
             
         # 建立卡片名稱對應目標卡號的字典 (用來做精確過濾)
         card_target_map = {}
-        all_target_ids = [] # 保留原本變數以防萬一，或用於統計
+        all_target_card_numbers = [] # 保留原本變數以防萬一，或用於統計
         
         for item in config.get('shopping_cart', []):
             c_name = item.get('card_name_zh')
-            t_ids = item.get('target_ids', [])
+            # target_card_numbers 對應 README 中的 card_number (e.g., DABL-JP035)
+            t_ids = item.get('target_card_numbers', [])
             if c_name:
                 card_target_map[c_name] = t_ids
-            all_target_ids.extend(t_ids)
+            all_target_card_numbers.extend(t_ids)
             
-        if not all_target_ids:
-            print("警告: 設定檔中沒有任何目標卡號 (target_ids)。")
+        if not all_target_card_numbers:
+            print("警告: 設定檔中沒有任何目標卡號 (target_card_numbers)。")
         else:
-            print(f"已載入 {len(all_target_ids)} 個目標卡號，涵蓋 {len(card_target_map)} 種卡片。")
+            print(f"已載入 {len(all_target_card_numbers)} 個目標卡號，涵蓋 {len(card_target_map)} 種卡片。")
             
     except FileNotFoundError:
         print(f"錯誤: 找不到設定檔 {cart_config}。")
@@ -98,7 +99,7 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
                     continue
                 
                 # 過濾 6: 確保商品名稱包含該卡片特定的目標卡號 (Strict Mode)
-                # 只有當商品名稱包含 "該卡片" 指定的 target_ids 中的至少一個時，才保留
+                # 只有當商品名稱包含 "該卡片" 指定的 target_card_numbers 中的至少一個時，才保留
                 if search_card_name in card_target_map:
                     specific_targets = card_target_map[search_card_name]
                     if specific_targets and not any(target_id in product_name for target_id in specific_targets):
@@ -106,7 +107,7 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
                 else:
                     # 如果找不到對應的卡片名稱 (可能是舊資料或欄位缺失)，退回使用全域檢查
                     # 但理想情況下應該都有 search_card_name
-                    if all_target_ids and not any(target_id in product_name for target_id in all_target_ids):
+                    if all_target_card_numbers and not any(target_id in product_name for target_id in all_target_card_numbers):
                         continue
                 
                 # 通過所有檢查，加入保留名單

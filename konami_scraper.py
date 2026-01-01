@@ -59,9 +59,10 @@ class KonamiScraper:
     def fetch_data(self, cid):
         """
         抓取指定 CID 的 Konami 網頁資料
+        CID (Konami ID): Konami 官方資料庫的卡片 ID (例如: 4006)
         
         Args:
-            cid (str): 卡片 ID
+            cid (str): Konami Card ID
             
         Returns:
             str: 網頁 HTML 內容，若失敗則回傳 None

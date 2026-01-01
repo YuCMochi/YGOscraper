@@ -143,6 +143,7 @@ class RutenScraper:
             image_url = product.get('Image', '')
             
             return {
+                # product_id: 露天拍賣的商品 ID (Ruten Product ID), 不是卡片編號
                 '商品ID': product.get('ProdId', ''),
                 '商品名稱': product.get('ProdName', ''),
                 '賣家ID': product.get('SellerId', ''),
@@ -264,16 +265,18 @@ async def main_async(cart_path='data/cart.json', output_path=None):
     # 3. 逐一搜尋購物車中的卡片
     for item in shopping_cart:
         card_name = item.get('card_name_zh')
-        target_ids = item.get('target_ids', [])
+        # target_card_numbers 對應 README 中的 card_number (e.g., DABL-JP035)
+        target_card_numbers = item.get('target_card_numbers', [])
         
-        if not card_name or not target_ids:
+        if not card_name or not target_card_numbers:
             continue
 
-        for target_id in target_ids:
-            print(f"\n開始搜尋卡片：{card_name}, ID: {target_id}")
+        for target_card_number in target_card_numbers:
+            print(f"\n開始搜尋卡片：{card_name}, ID: {target_card_number}")
             
             # 限制最多5頁，避免抓太久
-            products = await scraper.process_products_async(target_id, max_pages=5)
+            # target_card_number 作為搜尋關鍵字
+            products = await scraper.process_products_async(target_card_number, max_pages=5)
             
             # 標記這是哪張卡片的搜尋結果
             for product in products:

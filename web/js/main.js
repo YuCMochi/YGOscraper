@@ -114,7 +114,7 @@ const app = createApp({
                 const items = data.shopping_cart || [];
                 cartData.shopping_cart = items.map(item => ({
                     ...item,
-                    target_ids: item.target_ids || [],
+                    target_card_numbers: item.target_card_numbers || [],
                     // UI states
                     ui_inputVisible: false,
                     ui_inputValue: ''
@@ -129,7 +129,7 @@ const app = createApp({
             cartData.shopping_cart.push({
                 card_name_zh: '新卡片',
                 required_amount: 3,
-                target_ids: [],
+                target_card_numbers: [],
                 ui_inputVisible: false,
                 ui_inputValue: ''
             });
@@ -197,8 +197,8 @@ const app = createApp({
         const handleInputConfirmItem = (item) => {
             if (item.ui_inputValue) {
                 const val = item.ui_inputValue.trim().toUpperCase();
-                if (val && !item.target_ids.includes(val)) {
-                    item.target_ids.push(val);
+                if (val && !item.target_card_numbers.includes(val)) {
+                    item.target_card_numbers.push(val);
                 }
             }
             item.ui_inputVisible = false;
@@ -216,7 +216,7 @@ const app = createApp({
                 shopping_cart: cartData.shopping_cart.map(item => ({
                     card_name_zh: item.card_name_zh,
                     required_amount: item.required_amount,
-                    target_ids: item.target_ids
+                    target_card_numbers: item.target_card_numbers
                 }))
             };
 

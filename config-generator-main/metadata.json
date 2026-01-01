@@ -1,5 +1,0 @@
-{
-  "name": "TCG Shopping JSON Generator",
-  "description": "A visual tool to generate configuration JSON files for trading card shopping bots or lists.",
-  "requestFramePermissions": []
-}
