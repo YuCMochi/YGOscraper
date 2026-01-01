@@ -2,6 +2,21 @@ import csv
 import json
 import os
 import argparse
+import re
+
+def check_card_code_match(target_code, text):
+    """
+    使用 Regex 檢查卡號是否精確匹配，避免子字串誤判 (如 SD5 匹配到 YSD5)。
+    邏輯：
+    1. (?<![a-zA-Z]) : 前面不能是英文字母 (避免 YSD5 被當作 SD5)
+       - 但允許前面是數字 (處理連在一起的卡號，如 ...014SD5...)
+       - 也允許前面是符號或空格
+    2. (?![0-9]) : 後面不能是數字 (確保卡號數字部分已結束)
+    """
+    # 轉義 target_code 中的特殊字元 (雖然卡號通常只有英數和橫線，但保險起見)
+    # 忽略大小寫 (re.IGNORECASE)
+    pattern = r'(?<![a-zA-Z])' + re.escape(target_code) + r'(?![0-9])'
+    return re.search(pattern, text, re.IGNORECASE) is not None
 
 def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
     """
@@ -98,16 +113,16 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
                 if any(keyword in product_name for keyword in exclude_keywords):
                     continue
                 
-                # 過濾 6: 確保商品名稱包含該卡片特定的目標卡號 (Strict Mode)
+                # 過濾 6: 確保商品名稱包含該卡片特定的目標卡號 (Strict Mode) + Regex 檢查
                 # 只有當商品名稱包含 "該卡片" 指定的 target_card_numbers 中的至少一個時，才保留
                 if search_card_name in card_target_map:
                     specific_targets = card_target_map[search_card_name]
-                    if specific_targets and not any(target_id in product_name for target_id in specific_targets):
+                    # 使用 Regex 檢查取代原本的 simple substring check
+                    if specific_targets and not any(check_card_code_match(target_id, product_name) for target_id in specific_targets):
                         continue
                 else:
                     # 如果找不到對應的卡片名稱 (可能是舊資料或欄位缺失)，退回使用全域檢查
-                    # 但理想情況下應該都有 search_card_name
-                    if all_target_card_numbers and not any(target_id in product_name for target_id in all_target_card_numbers):
+                    if all_target_card_numbers and not any(check_card_code_match(target_id, product_name) for target_id in all_target_card_numbers):
                         continue
                 
                 # 通過所有檢查，加入保留名單
