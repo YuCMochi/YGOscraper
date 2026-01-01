@@ -3,29 +3,38 @@
 ```mermaid
 sequenceDiagram
     participant 使用者
-    participant GUI
+    participant 網頁前端 (web/ app.py)
+    participant Konami DB爬蟲 (konami_scraper.py)
     participant 主控制器 (main_controller.py)
     participant 檔案創建 (file_genarator.py)
     participant 爬蟲模組 (scraper.py)
     participant 資料清理 (clean_csv.py)
     participant 計算器 (caculator.py)
 
-    rect rgb(255, 102, 99)
-    note over 使用者,GUI: 選購階段
+    rect rgba(255, 102, 99, 0.53)
+    note over 使用者,網頁前端 (web/ app.py): 創建/選擇舊專案 Step.1
+    使用者->>網頁前端 (web/ app.py): 打開程式創建新購買專案
+    網頁前端 (web/ app.py)->>主控制器 (main_controller.py):創建專案
 
-    使用者->>GUI: 打開程式創建新購買專案
-    GUI->>主控制器 (main_controller.py):請求執行 
-
-    主控制器 (main_controller.py)->>檔案創建 (file_genarator.py): 在 /data資料夾下創建新資料夾目錄&空白的 cart.json
+    主控制器 (main_controller.py)->>檔案創建 (file_genarator.py): 在 /data資料夾下創建新資料夾目錄＆空白的 cart.json
     檔案創建 (file_genarator.py)-->>主控制器 (main_controller.py): 偵測檔案已創建完成
-    主控制器 (main_controller.py)-->>GUI: 呼叫已就緒 回傳資料夾位置
-    使用者->>GUI: 以UI輸入 cart.json所需資料
-    GUI->>主控制器 (main_controller.py): 通知已更新 cart.json
-
+    主控制器 (main_controller.py)-->>網頁前端 (web/ app.py): 回傳資料夾位置 準備商品購物車
     end
 
-    rect rgba(47, 168, 182, 1)
-    note over 主控制器 (main_controller.py),計算器 (caculator.py): 程式計算階段
+    rect rgba(255, 219, 99, 0.59)
+    note over 使用者,網頁前端 (web/ app.py): 編輯購物車 Step.2
+    使用者->>網頁前端 (web/ app.py): 查詢＆選購卡片
+    網頁前端 (web/ app.py)-->>網頁前端 (web/ app.py): 將選擇的卡片密碼轉換成cid
+
+    網頁前端 (web/ app.py)->>Konami DB爬蟲 (konami_scraper.py): 偵測到cid生成後動態爬蟲
+    Konami DB爬蟲 (konami_scraper.py)-->>網頁前端 (web/ app.py): 即時輸出該卡號顯示在已選購區
+    end
+
+    rect rgba(64, 171, 86, 0.56)
+    note over 使用者,網頁前端 (web/ app.py): 計算中 Step.3
+    使用者->>網頁前端 (web/ app.py): 開始計算
+    網頁前端 (web/ app.py)->>主控制器 (main_controller.py): 選擇的卡片＆對應卡片編號更新至 cart.json
+
     主控制器 (main_controller.py)->>爬蟲模組 (scraper.py): 請求執行＆輸入 cart.json
     爬蟲模組 (scraper.py)-->>主控制器 (main_controller.py): 返回原始商品資料 ruten_data.csv
     
@@ -36,9 +45,12 @@ sequenceDiagram
     計算器 (caculator.py)->>計算器 (caculator.py): 產生計算過程 caculate.log
     計算器 (caculator.py)-->>主控制器 (main_controller.py): 返回最佳購買方案 plan.json
     end
-
-    主控制器 (main_controller.py)-->>GUI: 讀取 plan.json
-    GUI-->>使用者: 依照 plan.json 顯示結果
+    
+    rect rgba(99, 213, 255, 0.59)
+    note over 使用者,網頁前端 (web/ app.py): 計算結果 Step.4
+    主控制器 (main_controller.py)-->>網頁前端 (web/ app.py): 讀取 plan.json
+    網頁前端 (web/ app.py)-->>使用者: 依照 plan.json 顯示結果
+    end
 ```
 
 ## 檔案目錄
@@ -115,4 +127,10 @@ flowchart TB
     * 依照每張卡的`product_id`設立超連結讓使用者能直接點擊去購買商品 格式如下
     `https://www.ruten.com.tw/item/show?product_id`
 
-啟動程式 `streamlit run app.py`
+
+## 名詞定義
+**Konami官方資料庫的卡片id etc.4006** :cid
+
+**卡片密碼 etc.91509824** :card_passcode
+
+**卡片編號 etc.DABL-JP035** :card_number
