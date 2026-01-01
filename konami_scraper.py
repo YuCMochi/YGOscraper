@@ -99,7 +99,8 @@ class KonamiScraper:
             
         # 尋找版本列表區塊 (CardDetail_packlist)
         # 這是主要的目標區塊，包含了不同版本的卡片資訊
-        packlist_match = re.search(r'<!-- ///CardDetail_packlist  -->(.*?)<!-- ///CardDetail', html_content, re.DOTALL)
+        # 修改 regex 以匹配到下一個 '<!-- ///' 開頭的註解，因為某些頁面的結構可能不同 (例如 CID 21448)
+        packlist_match = re.search(r'<!-- ///CardDetail_packlist  -->(.*?)<!-- ///', html_content, re.DOTALL)
         if not packlist_match:
             # 如果找不到主要區塊，嘗試找 update_list div (備用方案，某些頁面結構可能不同)
             packlist_match = re.search(r'<div id="update_list" class="list">(.*?)</div>\s*</div>\s*<!-- \.icon -->', html_content, re.DOTALL)
