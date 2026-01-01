@@ -128,7 +128,7 @@ const app = createApp({
         function addCartItem() {
             cartData.shopping_cart.push({
                 card_name_zh: '新卡片',
-                required_amount: 3,
+                required_amount: 1,
                 target_card_numbers: [],
                 ui_inputVisible: false,
                 ui_inputValue: ''
@@ -235,7 +235,7 @@ const app = createApp({
                         if (uniqueNumbers.length > 0) {
                              cartData.shopping_cart.push({
                                 card_name_zh: name,
-                                required_amount: 3,
+                                required_amount: 1,
                                 target_card_numbers: uniqueNumbers,
                                 ui_inputVisible: false,
                                 ui_inputValue: ''
@@ -249,7 +249,7 @@ const app = createApp({
                          // Fallback: Add just the name, user has to fill numbers
                          cartData.shopping_cart.push({
                                 card_name_zh: name,
-                                required_amount: 3,
+                                required_amount: 1,
                                 target_card_numbers: [],
                                 ui_inputVisible: false,
                                 ui_inputValue: ''
