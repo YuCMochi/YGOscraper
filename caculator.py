@@ -43,14 +43,14 @@ def load_market_data(needed_cards, market_data_path):
     
     # 只保留我們需要的卡片資料
     market_data = df[df['search_card_name'].isin(needed_cards.keys())].copy()
-    
+
     # 過濾掉庫存是 0 的無效商品
     original_count = len(market_data)
     market_data = market_data[market_data['stock_qty'] > 0]
     filtered_count = len(market_data)
     
     if original_count > filtered_count:
-        print(f"已過濾掉 {original_count - filtered_count} 筆無庫存商品。ளி")
+        print(f"已過濾掉 {original_count - filtered_count} 筆無庫存商品。")
 
     # 幫每個商品加上一個唯一的編號，讓數學模型可以識別
     market_data['listing_id'] = market_data.index
@@ -58,7 +58,7 @@ def load_market_data(needed_cards, market_data_path):
     # 轉成字典列表格式
     card_listings = market_data.to_dict('records')
 
-    print(f"有效商品數量: {len(card_listings)} 筆。ளி")
+    print(f"有效商品數量: {len(card_listings)} 筆。")
     return card_listings
 
 def solve_best_combination(data, needed_cards, shipping_fee, min_purchase_limit, log_path=None, output_json_path=None):

@@ -73,6 +73,7 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
     # 2. 開始過濾資料
     cleaned_rows = []
     seller_excluded_count = 0
+    seen_product_ids = set() # 用來記錄已經處理過的商品 ID，防止重複
     
     try:
         # 使用 utf-8-sig 以處理可能的 BOM (Byte Order Mark)
@@ -81,6 +82,11 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
             fieldnames = reader.fieldnames
             
             for row in reader:
+                # 過濾 0: 去重複 (根據 product_id)
+                p_id = row.get('product_id')
+                if p_id and p_id in seen_product_ids:
+                    continue
+                
                 # 過濾 1: 黑名單賣家
                 if row.get('seller_id') in exclude_sellers:
                     seller_excluded_count += 1
@@ -125,8 +131,10 @@ def clean_ruten_csv(input_csv, output_csv, cart_config='data/cart.json'):
                     if all_target_card_numbers and not any(check_card_code_match(target_id, product_name) for target_id in all_target_card_numbers):
                         continue
                 
-                # 通過所有檢查，加入保留名單
+                # 通過所有檢查，加入保留名單並記錄 ID
                 cleaned_rows.append(row)
+                if p_id:
+                    seen_product_ids.add(p_id)
                 
     except FileNotFoundError:
         print(f"錯誤: 找不到輸入檔案 {input_csv}。")
