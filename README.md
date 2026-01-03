@@ -57,6 +57,76 @@ sequenceDiagram
     end
 ```
 
+## 前端與後端交互細節 (Eel Communication)
+
+此圖展示了前端 (`web/js/main.js`) 與後端 (`app.py`) 如何透過 Eel 框架進行雙向溝通。這是理解本專案 GUI 運作原理的關鍵。
+
+```mermaid
+sequenceDiagram
+    participant User as 使用者
+    participant JS as 前端 Vue (main.js)
+    participant Py as 後端 Python (app.py)
+
+    %% 初始化階段
+    rect rgba(119, 101, 101, 0.9)
+    Note over JS, Py: 1. 系統初始化 (Initialization)
+    User->>JS: 開啟應用程式
+    activate JS
+    JS->>Py: await eel.get_project_list()
+    activate Py
+    Py-->>JS: 回傳專案列表 [List]
+    deactivate Py
+    JS->>JS: window.eel.expose(appendLog)<br/>(開放 Log 接收通道，讓 Python 能主動講話)
+    deactivate JS
+    end
+
+    %% 專案與購物車操作
+    rect rgba(105, 139, 155, 0.9)
+    Note over JS, Py: 2. 資料載入與搜尋 (Data & Search)
+    User->>JS: 選擇專案並點擊載入
+    activate JS
+    JS->>Py: await eel.load_project(name)
+    Py-->>JS: 回傳專案絕對路徑 (Path)
+    JS->>Py: await eel.read_cart_json(path)
+    Py-->>JS: 回傳購物車資料 (JSON)
+    deactivate JS
+    
+    Note right of JS: 使用者在搜尋視窗選擇卡片
+    User->>JS: 傳入卡片 CID (Konami ID)
+    activate JS
+    JS->>Py: await eel.fetch_card_details(cid)
+    Py-->>JS: 回傳該卡片的所有版本與卡號
+    JS->>JS: 更新前端購物車列表 UI
+    deactivate JS
+    end
+
+    %% 執行流程
+    rect rgba(119, 147, 121, 0.9)
+    Note over JS, Py: 3. 核心執行流程 (Core Process)
+    User->>JS: 點擊「儲存設定並開始計算」
+    activate JS
+    JS->>Py: await eel.save_cart_json(path, data)
+    Py-->>JS: true (儲存成功)
+    
+    JS->>Py: await eel.run_full_process(path)
+    activate Py
+    Note right of Py: Python 依序執行：<br/>1. scraper.py<br/>2. clean_csv.py<br/>3. caculator.py
+    
+    loop 即時日誌同步 (Real-time Log)
+        Py->>JS: eel.appendLog(msg)
+        JS->>User: 更新黑色終端機畫面
+    end
+    
+    Py-->>JS: true (全部執行完成)
+    deactivate Py
+    
+    JS->>Py: await eel.get_results(path)
+    Py-->>JS: 回傳 plan.json (計算結果)
+    JS->>User: 顯示最佳購買方案表格
+    deactivate JS
+    end
+```
+
 ## 核心模組功能詳解
 
 ### 1. 爬蟲模組 (`scraper.py`)
