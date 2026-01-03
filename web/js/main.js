@@ -2,54 +2,60 @@ const { createApp, ref, reactive, onMounted, computed, watch, nextTick } = Vue;
 
 const app = createApp({
     setup() {
-        // State
-        const activeTab = ref('projects');
-        const projectList = ref([]);
-        const currentProject = ref(null);
-        const selectedProject = ref('');
-        const loading = ref(false);
-        const isRunning = ref(false);
-        const logContent = ref('');
-        const resultsData = ref(null);
-        const activeSellers = ref([]); // For accordion
+        // --- 狀態定義 (State) ---
+        const activeTab = ref('projects');          // 當前選中的標籤頁 (專案、購物車、結果)
+        const projectList = ref([]);               // 所有的專案列表
+        const currentProject = ref(null);          // 當前啟用的專案路徑
+        const selectedProject = ref('');           // 下拉選單中選中的專案名稱
+        const loading = ref(false);                // 是否正在載入中
+        const isRunning = ref(false);              // 是否正在執行計算程序
+        const logContent = ref('');                // 終端機日誌內容
+        const resultsData = ref(null);             // 計算後的結果數據
+        const activeSellers = ref([]);             // 用於結果頁面的手風琴展開狀態
 
+        // 購物車數據模型
         const cartData = reactive({
             global_settings: {
-                default_shipping_cost: 60,
-                min_purchase_limit: 0,
-                global_exclude_keywords: [],
-                global_exclude_seller: []
+                default_shipping_cost: 60,         // 預設運費
+                min_purchase_limit: 0,             // 最低購買限制
+                global_exclude_keywords: [],       // 全域排除關鍵字
+                global_exclude_seller: []          // 全域排除賣家
             },
-            shopping_cart: []
+            shopping_cart: []                      // 購物車內的卡片清單
         });
         
+        // 計算當前專案的名稱 (從路徑中擷取最後一段)
         const currentProjectName = computed(() => {
             if (!currentProject.value) return '';
-            // Handle both Windows and Unix paths
+            // 處理 Windows (\) 與 Unix (/) 的路徑分隔符
             const parts = currentProject.value.split(/[/\\]/);
             return parts[parts.length - 1];
         });
 
-        // Initialize
+        // --- 初始化 (Initialize) ---
         onMounted(async () => {
+            // 組件掛載後重新整理專案列表
             await refreshProjects();
-            // Expose log function to Eel
+            // 將 appendLog 函數暴露給 Eel (讓 Python 端的程式可以呼叫它來更新 UI)
             window.eel.expose(appendLog, 'appendLog');
         });
 
-        // UI State for Global Tags
-        const inputVisibleKeywords = ref(false);
-        const inputValueKeywords = ref('');
-        const keywordInputRef = ref(null);
+        // --- 全域標籤 (Global Tags) 的 UI 狀態 ---
+        const inputVisibleKeywords = ref(false);    // 排除關鍵字輸入框是否顯示
+        const inputValueKeywords = ref('');         // 排除關鍵字輸入框的值
+        const keywordInputRef = ref(null);          // 排除關鍵字輸入框的 DOM 引用
 
-        const inputVisibleSellers = ref(false);
-        const inputValueSellers = ref('');
-        const sellerInputRef = ref(null);
+        const inputVisibleSellers = ref(false);     // 排除賣家輸入框是否顯示
+        const inputValueSellers = ref('');          // 排除賣家輸入框的值
+        const sellerInputRef = ref(null);           // 排除賣家輸入框的 DOM 引用
 
-        // Methods
+        // --- 核心方法 (Methods) ---
+
+        // 重新整理專案列表
         async function refreshProjects() {
             loading.value = true;
             try {
+                // 呼叫 Python 端獲取專案清單
                 projectList.value = await eel.get_project_list()();
             } catch (e) {
                 console.error("Failed to load projects", e);
@@ -59,9 +65,11 @@ const app = createApp({
             }
         }
 
+        // 建立新專案
         async function createProject() {
             loading.value = true;
             try {
+                // 呼叫 Python 端建立專案，成功會回傳新專案路徑
                 const newPath = await eel.create_new_project()();
                 if (newPath) {
                     ElementPlus.ElMessage.success('專案建立成功');
@@ -77,16 +85,18 @@ const app = createApp({
             }
         }
 
+        // 載入選中的專案
         async function loadProject() {
             if (!selectedProject.value) return;
             loading.value = true;
             try {
+                // 呼叫 Python 端載入指定的專案
                 const path = await eel.load_project(selectedProject.value)();
                 if (path) {
                     currentProject.value = path;
                     ElementPlus.ElMessage.success(`已載入: ${selectedProject.value}`);
                     await loadCart();
-                    await loadResults(); // Try to load existing results
+                    await loadResults(); // 嘗試載入已存在的計算結果
                     activeTab.value = 'cart';
                 }
             } catch (e) {
@@ -96,12 +106,13 @@ const app = createApp({
             }
         }
 
+        // 讀取購物車 JSON 檔案
         async function loadCart() {
             if (!currentProject.value) return;
             try {
                 const data = await eel.read_cart_json(currentProject.value)();
                 
-                // Merge data to preserve reactivity and ensure defaults
+                // 合併數據以保持響應性並確保預設值存在
                 cartData.global_settings = {
                     default_shipping_cost: 60,
                     min_purchase_limit: 0,
@@ -110,12 +121,11 @@ const app = createApp({
                     ...data.global_settings
                 };
                 
-                // Process cart items to add UI state for tags
+                // 處理購物車項目，加入 UI 用的標籤輸入狀態
                 const items = data.shopping_cart || [];
                 cartData.shopping_cart = items.map(item => ({
                     ...item,
                     target_card_numbers: item.target_card_numbers || [],
-                    // UI states
                     ui_inputVisible: false,
                     ui_inputValue: ''
                 }));
@@ -125,6 +135,7 @@ const app = createApp({
             }
         }
 
+        // 手動新增一個空的購物車項目
         function addCartItem() {
             cartData.shopping_cart.push({
                 card_name_zh: '新卡片',
@@ -135,18 +146,19 @@ const app = createApp({
             });
         }
 
+        // 移除購物車項目
         function removeCartItem(index) {
             cartData.shopping_cart.splice(index, 1);
         }
 
-        // --- Tag Handling Logic ---
+        // --- 標籤處理邏輯 (Tag Handling Logic) ---
 
-        // Generic close handler
+        // 通用的標籤關閉 (移除) 處理器
         const handleClose = (list, tag) => {
             list.splice(list.indexOf(tag), 1);
         }
 
-        // Global Keywords
+        // 顯示全域關鍵字輸入框
         const showInputKeywords = () => {
             inputVisibleKeywords.value = true;
             nextTick(() => {
@@ -154,6 +166,7 @@ const app = createApp({
             });
         }
 
+        // 確認新增全域關鍵字
         const handleInputConfirmKeywords = () => {
             if (inputValueKeywords.value) {
                 if (!cartData.global_settings.global_exclude_keywords.includes(inputValueKeywords.value)) {
@@ -164,7 +177,7 @@ const app = createApp({
             inputValueKeywords.value = '';
         }
 
-        // Global Sellers
+        // 顯示全域排除賣家輸入框
         const showInputSellers = () => {
             inputVisibleSellers.value = true;
             nextTick(() => {
@@ -172,6 +185,7 @@ const app = createApp({
             });
         }
 
+        // 確認新增全域排除賣家
         const handleInputConfirmSellers = () => {
             if (inputValueSellers.value) {
                 if (!cartData.global_settings.global_exclude_seller.includes(inputValueSellers.value)) {
@@ -182,18 +196,17 @@ const app = createApp({
             inputValueSellers.value = '';
         }
 
-        // Cart Item IDs (Per Item)
+        // 顯示特定卡片的編號輸入框
         const showInputItem = (item, index) => {
             item.ui_inputVisible = true;
             nextTick(() => {
-                // Access dynamic ref using ID or class could be tricky, 
-                // but Vue allows refs in v-for. We will use a function ref in template or just rely on standard focus if possible.
-                // Simpler: use document.getElementById since we can generate unique IDs
+                // 使用唯一 ID 來聚焦到輸入框
                 const el = document.getElementById(`save-tag-input-${index}`);
                 if(el) el.focus();
             });
         }
 
+        // 確認新增特定卡片的編號
         const handleInputConfirmItem = (item) => {
             if (item.ui_inputValue) {
                 const val = item.ui_inputValue.trim().toUpperCase();
@@ -205,13 +218,14 @@ const app = createApp({
             item.ui_inputValue = '';
         }
 
-        // --- Search/Query Module Integration ---
+        // --- 搜尋模組整合 (Search/Query Module Integration) ---
         
+        // 開啟卡片搜尋視窗
         function openSearch() {
             window.open('query_module/index.html', 'CardSearch', 'width=1000,height=800');
         }
 
-        // Listen for messages from the search window
+        // 監聽來自搜尋視窗 (iframe/popup) 的訊息
         window.addEventListener('message', async (event) => {
             if (event.data && event.data.type === 'ADD_CARD') {
                 const { cid, name, id } = event.data;
@@ -223,13 +237,13 @@ const app = createApp({
                 }
 
                 try {
-                    // Fetch card details (versions) from Konami using scraper
+                    // 呼叫 Python 端從 Konami 資料庫抓取卡片各版本的詳細資料
                     const versions = await eel.fetch_card_details(cid)();
                     
                     if (versions && versions.length > 0) {
-                        // Extract card numbers
+                        // 提取所有卡片編號
                         const cardNumbers = versions.map(v => v.card_number).filter(n => n);
-                        // Unique numbers
+                        // 去除重複編號
                         const uniqueNumbers = [...new Set(cardNumbers)];
 
                         if (uniqueNumbers.length > 0) {
@@ -246,7 +260,7 @@ const app = createApp({
                         }
                     } else {
                         ElementPlus.ElMessage.warning(`無法從 Konami 資料庫抓取到 ${name} (CID: ${cid}) 的詳細資料`);
-                         // Fallback: Add just the name, user has to fill numbers
+                         // 備案：只加入名稱，讓使用者手動填寫編號
                          cartData.shopping_cart.push({
                                 card_name_zh: name,
                                 required_amount: 1,
@@ -263,12 +277,12 @@ const app = createApp({
             }
         });
 
-        // --- End Tag Handling ---
+        // --- 儲存與執行 ---
 
         async function saveAndRun() {
             if (!currentProject.value) return;
             
-            // Prepare clean data (strip UI props)
+            // 準備乾淨的數據 (移除 UI 用的暫時屬性)
             const cleanData = {
                 global_settings: JSON.parse(JSON.stringify(cartData.global_settings)),
                 shopping_cart: cartData.shopping_cart.map(item => ({
@@ -279,20 +293,18 @@ const app = createApp({
             };
 
             isRunning.value = true;
-            logContent.value = 'Initializing...\n';
+            logContent.value = '正在初始化...\n';
             
             try {
-                // 1. Save
+                // 1. 儲存設定到 JSON
                 await eel.save_cart_json(currentProject.value, cleanData)();
                 ElementPlus.ElMessage.success('設定已儲存');
                 
-                // 2. Run
+                // 2. 執行完整計算流程
                 const success = await eel.run_full_process(currentProject.value)();
                 if (success) {
                     ElementPlus.ElMessage.success('計算完成！請查看結果分頁');
                     await loadResults();
-                    // Optional: auto switch?
-                    // activeTab.value = 'results'; 
                 } else {
                     ElementPlus.ElMessage.error('執行過程發生錯誤');
                 }
@@ -303,6 +315,7 @@ const app = createApp({
             }
         }
 
+        // 載入計算結果
         async function loadResults() {
             if (!currentProject.value) return;
             try {
@@ -317,6 +330,7 @@ const app = createApp({
             }
         }
 
+        // 獲取標籤頁標題
         function getTabTitle(tab) {
             const map = {
                 'projects': '專案管理 (Project Management)',
@@ -326,17 +340,17 @@ const app = createApp({
             return map[tab] || 'Dashboard';
         }
 
-        // Exposed to Eel
+        // 暴露給 Eel 使用：附加日誌訊息到終端機視窗
         function appendLog(msg) {
             logContent.value += msg + '\n';
-            // Auto scroll
+            // 自動捲動到底部
             nextTick(() => {
                 const term = document.querySelector('.terminal-window');
                 if (term) term.scrollTop = term.scrollHeight;
             });
         }
 
-        // Return bindings
+        // 回傳給 Template 使用的狀態與方法
         return {
             activeTab,
             projectList,
@@ -350,7 +364,7 @@ const app = createApp({
             resultsData,
             activeSellers,
             
-            // Refs for Inputs
+            // 輸入框引用
             inputVisibleKeywords,
             inputValueKeywords,
             keywordInputRef,
@@ -358,7 +372,7 @@ const app = createApp({
             inputValueSellers,
             sellerInputRef,
 
-            // Methods
+            // 方法
             createProject,
             loadProject,
             addCartItem,
@@ -367,7 +381,7 @@ const app = createApp({
             loadResults,
             getTabTitle,
             
-            // Tag Methods
+            // 標籤處理方法
             handleClose,
             showInputKeywords,
             handleInputConfirmKeywords,
@@ -380,7 +394,7 @@ const app = createApp({
     }
 });
 
-// Register Icons
+// 註冊 Element Plus 圖示
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);
 }
