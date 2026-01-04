@@ -20,13 +20,5 @@
     ]
   },
   "shopping_cart": [
-    {
-      "card_name_zh": "神聖魔術師",
-      "required_amount": 2,
-      "target_card_numbers": [
-        "25YA-JP001",
-        "23TP-JP204"
-      ]
-    }
   ]
 }
