@@ -1,13 +1,30 @@
+# Python
 __pycache__/
-*.pyc
-.env
+*.py[cod]
+*$py.class
+env/
 venv/
-.venv/
+.env
 
-product_images/
+# Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+node_modules/
+
+# Mac
 .DS_Store
 
-# 忽略data資料夾下所有東西
-data/*
-# 除了data資料夾下的cart.json
+# IDE
+.vscode/
+.idea/
+
+# Project Data
+data/
+product_images/
+output/
+*.csv
+*.log
+*.json
+!frontend/package.json
 !data/cart.json

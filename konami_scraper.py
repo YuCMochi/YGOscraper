@@ -18,6 +18,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+__version__ = "2.0.0"
+
 # 基本設定
 MAX_RETRIES = 3 # 最大重試次數
 
@@ -180,6 +182,114 @@ class KonamiScraper:
             
         return results
 
+    def search_by_keyword(self, keyword):
+        """
+        使用關鍵字搜尋卡片 (Konami 官方資料庫)
+        
+        Args:
+            keyword (str): 搜尋關鍵字 (卡片名稱，支援日文/中文)
+            
+        Returns:
+            list: 搜尋結果列表 [{'name': '...', 'cid': '...', 'url': '...'}]
+        """
+        url = "https://www.db.yugioh-card.com/yugiohdb/card_search.action"
+        params = {
+            'ope': '1',
+            'sess': '1',
+            'keyword': keyword,
+            'stype': '1',
+            'ctype': '',
+            'othercon': '2',
+            'request_locale': 'ja'
+        }
+        
+        logger.info(f"正在搜尋關鍵字: {keyword}")
+        
+        try:
+            response = self.session.get(url, params=params, headers=self._get_headers(), timeout=10)
+            response.raise_for_status()
+            
+            results = []
+            html = response.text
+            
+            # Konami DB 的搜尋結果 HTML 結構：
+            # <div class="t_row c_normal open">
+            #   <div class="box_card_img icon">
+            #     <img alt="卡片名" title="卡片名">
+            #   </div>
+            #   <dl class="flex_1">
+            #     <dd class="box_card_name">
+            #       <span class="card_ruby">片假名讀音</span>
+            #       <span class="card_name">卡片名稱</span>
+            #     </dd>
+            #   </dl>
+            #   <input class="link_value" value="/yugiohdb/card_search.action?ope=2&cid=XXXX">
+            # </div>
+            
+            # 方法一：使用 BeautifulSoup 解析（更可靠）
+            try:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html, 'html.parser')
+                
+                # 找到所有 t_row 區塊（每個代表一張卡片搜尋結果）
+                t_rows = soup.find_all('div', class_='t_row')
+                
+                for row in t_rows:
+                    link_input = row.find('input', class_='link_value')
+                    name_span = row.find('span', class_='card_name')
+                    
+                    if link_input and name_span:
+                        val = link_input.get('value', '')
+                        cid_match = re.search(r'cid=(\d+)', val)
+                        if cid_match:
+                            cid = cid_match.group(1)
+                            name = name_span.text.strip()
+                            
+                            results.append({
+                                'name': name,
+                                'cid': cid,
+                                'url': f"https://www.db.yugioh-card.com{val}"
+                            })
+                
+                logger.info(f"BeautifulSoup 解析找到 {len(results)} 個結果")
+                
+            except ImportError:
+                # 備用方案：使用正則表達式
+                logger.warning("BeautifulSoup 未安裝，使用正則表達式解析")
+                
+                # 提取所有 link_value 中的 CID
+                cid_pattern = re.compile(
+                    r'<input[^>]*class="link_value"[^>]*value="([^"]*cid=(\d+)[^"]*)"',
+                    re.DOTALL
+                )
+                for match in cid_pattern.finditer(html):
+                    full_url = match.group(1)
+                    cid = match.group(2)
+                    
+                    # 嘗試從附近的 img alt 屬性取得卡名
+                    name = f"CID {cid}"  # 預設名稱
+                    img_pattern = re.compile(
+                        rf'card_image_\d+_\d+[^>]*alt="([^"]*)"[^>]*>',
+                        re.DOTALL
+                    )
+                    # 搜尋 CID 附近的圖片
+                    for img_match in img_pattern.finditer(html):
+                        if cid in html[max(0, img_match.start()-500):img_match.end()+500]:
+                            name = img_match.group(1)
+                            break
+                    
+                    results.append({
+                        'name': name,
+                        'cid': cid,
+                        'url': f"https://www.db.yugioh-card.com{full_url}"
+                    })
+
+            return results
+
+        except Exception as e:
+            logger.error(f"搜尋關鍵字 '{keyword}' 時發生錯誤: {e}")
+            return []
+
 if __name__ == "__main__":
     # 設定命令列參數解析
     parser = argparse.ArgumentParser(description='Konami 遊戲王卡片資料爬蟲')
@@ -229,3 +339,4 @@ if __name__ == "__main__":
             logger.error(f"儲存檔案時發生錯誤: {e}")
     else:
         logger.warning("未能獲取任何資料，程式結束")
+
