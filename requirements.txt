@@ -6,4 +6,7 @@ numpy>=1.24.0
 pulp
 tabulate
 watchdog
-Eel
+fastapi
+uvicorn
+python-multipart
+beautifulsoup4
