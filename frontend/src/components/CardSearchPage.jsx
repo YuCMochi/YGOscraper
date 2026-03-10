@@ -151,145 +151,44 @@ const CardSearchPage = () => {
     // 加入購物車狀態（追蹤哪些卡正在處理 / 已加入）
     const [addingCards, setAddingCards] = useState({}); // { cid: 'loading' | 'done' }
 
-    // 保存資料庫參照
-    const dbListRef = useRef([]);
-    const cidTableRef = useRef(new Map()); // CID -> password(id)
-    const nameTableRef = useRef(new Map()); // CID -> 日文卡名
-
     // ============================================================
-    // 載入資料庫（模仿 ygo-json-loader.js）
+    // 初始化設定
     // ============================================================
     useEffect(() => {
-        let cancelled = false;
-
-        const loadDB = async () => {
-            try {
-                // 1. 載入 sql.js WASM 引擎
-                setLoadProgress('正在載入 SQL 引擎...');
-                const initSqlJs = (await import('sql.js')).default;
-                const SQL = await initSqlJs({
-                    locateFile: () => '/sql-wasm.wasm'
-                });
-
-                if (cancelled) return;
-
-                // 2. 直接載入主要卡片資料庫 (cards.cdb)
-                //    注意：原本使用 cards.zip 但該 URL 已失效，改用直接 .cdb 檔案
-                setLoadProgress('正在下載卡片資料庫（約 6MB）...');
-                const dbResponse = await fetch('https://salix5.github.io/cdb/cards.cdb');
-                if (!dbResponse.ok) {
-                    throw new Error(`下載卡片資料庫失敗: HTTP ${dbResponse.status}`);
-                }
-                const dbBuffer = await dbResponse.arrayBuffer();
-                const dbData = new Uint8Array(dbBuffer);
-
-                if (cancelled) return;
-
-                // 3. 載入預發行資料庫
-                setLoadProgress('正在載入擴充資料...');
-                const db2Response = await fetch('https://salix5.github.io/cdb/expansions/pre-release.cdb');
-                if (!db2Response.ok) {
-                    console.warn('預發行資料庫載入失敗，將僅使用主資料庫');
-                }
-
-                if (cancelled) return;
-
-                // 建立資料庫實例
-                const databases = [new SQL.Database(dbData)];
-                if (db2Response.ok) {
-                    const db2Buffer = await db2Response.arrayBuffer();
-                    databases.push(new SQL.Database(new Uint8Array(db2Buffer)));
-                }
-                dbListRef.current = databases;
-
-                // 4. 建立 CID 對照表（從 DB 本身取得）
-                //    注意：原本使用外部 JSON 但已失效，改從 DB 的 id 欄位推導
-                setLoadProgress('正在建立卡片索引...');
-                // 使用卡片的 password (id) 作為 CID 的近似值
-                // 在 YGO 資料庫中，大部分卡片的 id 就等於 Konami DB 的 CID
-                // 未來可以改用正確的 CID 映射表
-
-                if (cancelled) return;
-
-                setDbReady(true);
-                setDbLoading(false);
-                setLoadProgress('資料庫載入完成！');
-            } catch (err) {
-                if (!cancelled) {
-                    console.error('DB 載入失敗:', err);
-                    setDbError(`資料庫載入失敗: ${err.message}`);
-                    setDbLoading(false);
-                }
-            }
-        };
-
-        loadDB();
-        return () => { cancelled = true; };
+        setDbReady(true);
+        setDbLoading(false);
     }, []);
 
     // ============================================================
     // 搜尋邏輯
     // ============================================================
-    const handleSearch = useCallback(() => {
+    const handleSearch = useCallback(async () => {
         if (!searchQuery.trim() || !dbReady) return;
         setSearching(true);
 
         try {
             const query = searchQuery.trim();
-            const results = [];
+            // 後端將返回 [{passcode, name, cid, type, atk, def, level, race, attribute, desc, image_url}]
+            const response = await api.get(`/cards/search?q=${encodeURIComponent(query)}`);
 
-            // SQL 查詢：用中文卡名模糊搜尋
-            const selectAll = `SELECT datas.id, datas.ot, datas.alias, datas.type, datas.atk, datas.def, datas.level, datas.race, datas.attribute, texts.name, texts."desc"
-                FROM datas JOIN texts USING (id) WHERE 1`;
-
-            // 基本過濾：排除特殊 ID、token、替代卡圖
-            const filters = ` AND datas.id != ${ID_TYLER} AND datas.id != ${ID_DECOY} AND NOT type & ${TYPE_TOKEN}`;
-            const noAltFilter = ` AND (datas.id == 5405695 OR abs(datas.id - alias) >= ${ARTWORK_OFFSET})`;
-
-            // 名稱搜尋條件
-            const nameFilter = ` AND (name LIKE '%${query.replace(/'/g, "''")}%' OR "desc" LIKE '%※%${query.replace(/'/g, "''")}%')`;
-
-            const fullQuery = selectAll + filters + noAltFilter + nameFilter + ' LIMIT 100';
-
-            for (const db of dbListRef.current) {
-                try {
-                    const stmt = db.prepare(fullQuery);
-                    while (stmt.step()) {
-                        const row = stmt.getAsObject();
-                        // 處理替代卡圖
-                        let artid = 0;
-                        if (row.alias && Math.abs(row.id - row.alias) < ARTWORK_OFFSET && row.id !== 5405695) {
-                            artid = row.id;
-                            row.id = row.alias;
-                        }
-                        // 使用 card id (password) 作為 CID
-                        // 在大多數情況下 password 等同於 Konami DB 的 CID
-                        const cid = row.id;
-
-                        results.push({
-                            id: row.id,
-                            cid: cid,
-                            tw_name: row.name,    // 中文卡名（cdb 中的名稱）
-                            jp_name: null,         // 日文卡名（外部表已不可用）
-                            type: row.type,
-                            atk: row.atk,
-                            def: row.def,
-                            level: row.level,
-                            race: row.race,
-                            attribute: row.attribute,
-                            desc: row.desc,
-                            artid: artid,
-                            ot: row.ot,
-                        });
-                    }
-                    stmt.free();
-                } catch (err) {
-                    console.error('查詢錯誤:', err);
-                }
-            }
+            // 將後端回傳資料轉換為原件預期的格式
+            const mappedResults = (response.data || []).map(card => ({
+                id: card.passcode,
+                cid: card.cid,
+                tw_name: card.name,
+                jp_name: null,
+                type: card.type,
+                atk: card.atk,
+                def: card.def,
+                level: card.level,
+                race: card.race,
+                attribute: card.attribute,
+                desc: card.desc,
+                image_url: card.image_url
+            }));
 
             // 精確匹配排在前面
-            results.sort((a, b) => {
+            mappedResults.sort((a, b) => {
                 const aExact = a.tw_name === query;
                 const bExact = b.tw_name === query;
                 if (aExact && !bExact) return -1;
@@ -297,7 +196,7 @@ const CardSearchPage = () => {
                 return 0;
             });
 
-            setSearchResults(results);
+            setSearchResults(mappedResults);
         } catch (err) {
             console.error('搜尋失敗:', err);
         } finally {
@@ -306,19 +205,21 @@ const CardSearchPage = () => {
     }, [searchQuery, dbReady]);
 
     // ============================================================
-    // 加入購物車：卡名 → 後端查 CID → 爬卡號 → 加入購物車
+    // 加入購物車：用 CID 查卡號 → 加入購物車
     // ============================================================
     const handleAddToCart = async (card) => {
         setAddingCards(prev => ({ ...prev, [card.id]: 'loading' }));
 
         try {
-            // 1. 用卡名向後端取得卡號列表
-            //    後端流程：卡名 → search_by_keyword → 得到 CID → scrape_cids → 卡號
-            const encodedName = encodeURIComponent(card.tw_name);
-            const cidsRes = await api.get(`/cards/name/${encodedName}/card-numbers`);
-            const cardNumbers = cidsRes.data.card_numbers || [];
-
-            console.log(`卡片「${card.tw_name}」爬取到 ${cardNumbers.length} 個卡號:`, cardNumbers.slice(0, 5));
+            // 1. 若卡片具備 CID，用 CID 向後端取得卡號列表
+            let cardNumbers = [];
+            if (card.cid) {
+                const cidsRes = await api.get(`/cards/cid/${card.cid}/card-numbers`);
+                cardNumbers = cidsRes.data.card_numbers || [];
+                console.log(`卡片「${card.tw_name}」爬取到 ${cardNumbers.length} 個卡號:`, cardNumbers.slice(0, 5));
+            } else {
+                console.warn(`卡片「${card.tw_name}」缺少 CID，無法自動爬取卡號。`);
+            }
 
             // 2. 取得目前購物車
             const cartRes = await api.get(`/projects/${projectId}/cart`);
@@ -376,11 +277,7 @@ const CardSearchPage = () => {
     // 卡圖 URL
     // ============================================================
     const getImageUrl = (card) => {
-        const picId = card.artid || card.id;
-        if (picId <= MAX_CARD_ID) {
-            return `https://salix5.github.io/query-data/pics/${picId}.jpg`;
-        }
-        return null;
+        return card.image_url || null;
     };
 
     // ============================================================

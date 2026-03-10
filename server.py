@@ -8,10 +8,55 @@ import json
 import sys
 import subprocess
 import asyncio
+import sqlite3
+import urllib.request
+from contextlib import asynccontextmanager
 from file_genarator import FileGenerator
 from konami_scraper import KonamiScraper
 
-app = FastAPI(title="YGOscraper API", version="2.0.0")
+_PASSCODE_TO_CID_MAP = {}
+_LOCAL_CARD_DB = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global _LOCAL_CARD_DB, _PASSCODE_TO_CID_MAP
+    
+    print("載入外部卡片資料庫 (cid_table.json) 到記憶體...")
+    try:
+        req = urllib.request.Request("https://raw.githubusercontent.com/salix5/heliosphere/master/data/cid_table.json", headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            cid_data = json.loads(response.read().decode('utf-8'))
+            for cid_str, passcode_val in cid_data.items():
+                _PASSCODE_TO_CID_MAP[str(passcode_val)] = cid_str
+        print(f"成功載入 {len(_PASSCODE_TO_CID_MAP)} 筆 CID 對應資料。")
+    except Exception as e:
+        print(f"載入 CID 對應資料失敗: {e}")
+
+    print("載入外部卡片資料庫 (cards.cdb) 到記憶體...")
+    try:
+        req = urllib.request.Request("https://raw.githubusercontent.com/salix5/cdb/gh-pages/cards.cdb", headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            db_data = response.read()
+            
+        with open('/tmp/temp_cards.cdb', 'wb') as f:
+            f.write(db_data)
+            
+        source_db = sqlite3.connect('/tmp/temp_cards.cdb')
+        # check_same_thread=False is important for FastAPI async endpoints
+        _LOCAL_CARD_DB = sqlite3.connect(':memory:', check_same_thread=False)
+        source_db.backup(_LOCAL_CARD_DB)
+        source_db.close()
+        os.remove('/tmp/temp_cards.cdb')
+        print("成功載入 cards.cdb 到記憶體。")
+    except Exception as e:
+        print(f"載入 cards.cdb 失敗: {e}")
+        
+    yield
+    
+    if _LOCAL_CARD_DB:
+        _LOCAL_CARD_DB.close()
+
+app = FastAPI(title="YGOscraper API", version="2.0.0", lifespan=lifespan)
 
 __version__ = "2.0.0"
 
@@ -165,14 +210,43 @@ async def get_results(project_name: str):
 @app.get("/api/cards/search")
 async def search_cards(q: str):
     """
-    使用關鍵字搜尋卡片（Konami 官網）
+    使用本地揮發性記憶體中的 SQLite (cards.cdb) 進行關鍵字搜尋卡片
+    返回卡名、卡圖 URL、Passcode、CID
     """
-    if not q:
+    if not q or not _LOCAL_CARD_DB:
         return []
     
     try:
-        scraper = KonamiScraper()
-        results = scraper.search_by_keyword(q)
+        cursor = _LOCAL_CARD_DB.cursor()
+        # 查詢符合條件的卡片。限制回傳數量例如前 50 筆
+        cursor.execute("""
+            SELECT t.id, t.name, d.type, d.atk, d.def, d.level, d.race, d.attribute, t.desc 
+            FROM texts t 
+            JOIN datas d ON t.id = d.id 
+            WHERE t.name LIKE ? LIMIT 50
+        """, (f"%{q}%",))
+        rows = cursor.fetchall()
+        
+        results = []
+        for row in rows:
+            pwd, name, c_type, atk, c_def, level, race, attr, desc = row
+            passcode_str = str(pwd)
+            cid = _PASSCODE_TO_CID_MAP.get(passcode_str)
+            # 建立回傳資料結構，附加卡圖網址與 CID 以及屬性
+            results.append({
+                "passcode": passcode_str,
+                "name": name,
+                "cid": cid,
+                "type": c_type,
+                "atk": atk,
+                "def": c_def,
+                "level": level,
+                "race": race,
+                "attribute": attr,
+                "desc": desc,
+                "image_url": f"https://raw.githubusercontent.com/salix5/query-data/gh-pages/pics/{passcode_str}.jpg"
+            })
+            
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -197,98 +271,8 @@ async def get_card_numbers_by_cid(cid: int):
         print(f"爬取 CID {cid} 卡號時發生錯誤: {e}")
         raise HTTPException(status_code=500, detail=f"爬取卡號失敗: {str(e)}")
 
-@app.get("/api/cards/name/{card_name}/card-numbers")
-async def get_card_numbers_by_name(card_name: str):
-    """
-    根據卡片名稱（中文/日文）查找 CID，再爬取所有印刷卡號。
-    
-    因為 Konami DB 只有日文卡名，中文卡名無法直接搜尋。
-    本端點會嘗試多種策略找到對應的日文卡片。
-    """
-    import unicodedata
-    
-    try:
-        print(f"\n=== 搜尋卡片: {card_name} ===")
-        
-        # 策略 1：直接用傳入的卡名搜尋（日文名會直接匹配）
-        search_results = konami_scraper.search_by_keyword(card_name)
-        
-        # 策略 2：如果沒結果，提取漢字（CJK 統一漢字）部分再搜尋
-        # 例如「青眼雙爆裂龍」→ 提取「青眼雙爆裂龍」→ 逐步縮短為「青眼」
-        if not search_results:
-            # 提取所有漢字字元（共同用於中文和日文的部分）
-            kanji_chars = ''.join(
-                c for c in card_name 
-                if '\u4e00' <= c <= '\u9fff'  # CJK 統一漢字
-            )
-            
-            if kanji_chars:
-                # 如果漢字部分與原始卡名不同（有非漢字字元被過濾），先用純漢字搜一次
-                if kanji_chars != card_name:
-                    print(f"完整名稱搜尋無結果，嘗試漢字部分: {kanji_chars}")
-                    search_results = konami_scraper.search_by_keyword(kanji_chars)
-                
-                # 如果仍然沒結果，逐步縮短漢字進行搜尋
-                if not search_results and len(kanji_chars) > 2:
-                    # 嘗試前 2-4 個漢字（日文卡名中通常前幾個漢字是關鍵部分）
-                    for length in [min(4, len(kanji_chars)), min(3, len(kanji_chars)), 2]:
-                        partial = kanji_chars[:length]
-                        if partial == kanji_chars:
-                            continue  # 跳過與已嘗試相同的字串
-                        print(f"嘗試部分漢字: {partial}")
-                        search_results = konami_scraper.search_by_keyword(partial)
-                        if search_results:
-                            break
-        
-        if not search_results:
-            print(f"所有搜尋策略均無結果: {card_name}")
-            return {"card_name": card_name, "cid": None, "card_numbers": []}
-        
-        # 從搜尋結果中找最佳匹配
-        # 優先選擇名稱中包含最多原始卡名漢字的結果
-        best_match = search_results[0]
-        kanji_in_name = ''.join(c for c in card_name if '\u4e00' <= c <= '\u9fff')
-        
-        if len(search_results) > 1 and kanji_in_name:
-            # 計算每個結果與原始卡名的漢字匹配度
-            def match_score(result_name):
-                score = 0
-                for c in kanji_in_name:
-                    if c in result_name:
-                        score += 1
-                return score
-            
-            scored = [(match_score(r['name']), r) for r in search_results]
-            scored.sort(key=lambda x: -x[0])
-            best_match = scored[0][1]
-            print(f"最佳匹配（漢字匹配度）: {best_match['name']} (分數: {scored[0][0]})")
-        
-        cid = best_match['cid']
-        matched_name = best_match['name']
-        print(f"找到匹配: {matched_name} (CID: {cid})")
-        
-        # 用 CID 爬取卡號
-        data = konami_scraper.scrape_cids([cid])
-        card_numbers = []
-        if data and cid in data:
-            versions = data[cid]
-            card_numbers = [v['card_number'] for v in versions if v.get('card_number')]
-            # 去重（同一個卡號可能有不同稀有度）
-            card_numbers = list(dict.fromkeys(card_numbers))
-        
-        print(f"CID {cid} 找到 {len(card_numbers)} 個不重複卡號")
-        if card_numbers[:5]:
-            print(f"  前 5 個: {card_numbers[:5]}")
-        
-        return {
-            "card_name": card_name,
-            "matched_name": matched_name,
-            "cid": cid,
-            "card_numbers": card_numbers
-        }
-    except Exception as e:
-        print(f"查找卡片 '{card_name}' 的卡號時發生錯誤: {e}")
-        raise HTTPException(status_code=500, detail=f"爬取卡號失敗: {str(e)}")
+# get_card_numbers_by_name 已廢棄，因為透過記憶體資料庫搜尋出來的卡片已經附帶 CID 
+# 前端加入購物車時可直接呼叫 /api/cards/cid/{cid}/card-numbers
 
 DATA_DIR = "data"
 
