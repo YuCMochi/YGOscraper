@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 from typing import List, Optional
+# 引入統一的資料結構定義（已從 app/schemas.py 集中管理）
+from app.schemas import CartData, GlobalSettings, ProjectCreate
 import os
 import json
 import sys
@@ -79,26 +80,8 @@ app.add_middleware(
 konami_scraper = KonamiScraper()
 file_gen = FileGenerator()
 
-# --- Models ---
-class ProjectCreate(BaseModel):
-    pass # No fields needed for creation currently
-
-class CartItem(BaseModel):
-    card_name_zh: str
-    target_card_numbers: List[str]
-    required_amount: int
-    ui_inputVisible: Optional[bool] = False
-    ui_inputValue: Optional[str] = ""
-
-class GlobalSettings(BaseModel):
-    default_shipping_cost: int
-    min_purchase_limit: int
-    global_exclude_keywords: List[str]
-    global_exclude_seller: List[str]
-
-class CartData(BaseModel):
-    shopping_cart: List[CartItem]
-    global_settings: GlobalSettings
+# --- Models 已移至 app/schemas.py ---
+# ProjectCreate, GlobalSettings, CartData 現在由 app.schemas 提供
 
 # --- API Endpoints ---
 
