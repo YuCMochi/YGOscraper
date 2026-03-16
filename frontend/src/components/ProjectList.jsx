@@ -78,17 +78,43 @@ const ProjectList = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map((project) => (
-                        <Link to={`/project/${project}`} key={project} className="bg-surface border border-slate-700 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer group block">
+                        <Link to={`/project/${project.id}`} key={project.id} className="bg-surface border border-slate-700 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer group block">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400 group-hover:bg-blue-500/20 transition-colors">
                                     <FolderOpen size={24} />
                                 </div>
-                                <span className="text-xs font-mono text-slate-500 bg-slate-900/50 px-2 py-1 rounded">
-                                    {project.split('_')[0]}
-                                </span>
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className="text-xs font-mono text-slate-500 bg-slate-900/50 px-2 py-1 rounded">
+                                        {project.id.split('_')[0]}
+                                    </span>
+                                    <span className="text-xs font-medium text-accent bg-accent/10 px-2 py-1 rounded">
+                                        共 {project.item_count} 款卡片
+                                    </span>
+                                </div>
                             </div>
-                            <h4 className="text-lg font-medium text-white mb-1 truncate">{project}</h4>
-                            <p className="text-sm text-text-muted">點擊開啟此專案</p>
+                            <h4 className="text-lg font-medium text-white mb-2 truncate">{project.id}</h4>
+
+                            {/* 專案卡片預覽 */}
+                            {project.item_count > 0 ? (
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                    {project.preview_names.map((name, idx) => (
+                                        <span key={idx} className="text-[11px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded truncate max-w-[120px]">
+                                            {name}
+                                        </span>
+                                    ))}
+                                    {project.item_count > 3 && (
+                                        <span className="text-[11px] text-slate-500 bg-slate-800/50 px-2 py-0.5 rounded">
+                                            +{project.item_count - 3}
+                                        </span>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-text-muted mb-2">空購物車</p>
+                            )}
+
+                            <p className="text-xs text-text-muted/70 flex items-center gap-1 mt-4">
+                                點擊開啟此專案
+                            </p>
                         </Link>
                     ))}
                 </div>
