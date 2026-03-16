@@ -104,12 +104,32 @@ class CartData(BaseModel):
 
 @app.get("/api/projects")
 async def get_project_list():
-    """List all existing projects."""
-    if not os.path.exists("data"):
-        return []
-    projects = [d for d in os.listdir("data") if os.path.isdir(os.path.join("data", d))]
-    projects.sort(reverse=True)
-    return projects
+    """List all existing projects with preview info."""
+    projects_info = []
+    if os.path.exists("data"):
+        for d in os.listdir("data"):
+            project_path = os.path.join("data", d)
+            if os.path.isdir(project_path):
+                cart_path = os.path.join(project_path, "cart.json")
+                preview = {"id": d, "item_count": 0, "preview_names": []}
+                
+                # Try to read cart.json for preview info
+                if os.path.exists(cart_path):
+                    try:
+                        with open(cart_path, 'r', encoding='utf-8') as f:
+                            cart_data = json.load(f)
+                            items = cart_data.get('shopping_cart', [])
+                            preview['item_count'] = len(items)
+                            # Get up to 3 card names for preview
+                            preview['preview_names'] = [item.get('card_name_zh', '未知卡片') for item in items[:3]]
+                    except Exception:
+                        pass # Ignore parsing errors for preview
+                
+                projects_info.append(preview)
+    
+    # Sort by project ID (timestamp) descending
+    projects_info.sort(key=lambda x: x["id"], reverse=True)
+    return projects_info
 
 @app.post("/api/projects")
 async def create_project():
