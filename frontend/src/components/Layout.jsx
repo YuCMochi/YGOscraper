@@ -14,8 +14,6 @@ const Layout = ({ children }) => {
 
                 <nav className="flex-1 p-4 space-y-2">
                     <NavItem icon={<LayoutDashboard size={20} />} label="專案列表" active />
-                    <NavItem icon={<ShoppingCart size={20} />} label="購物車（即將推出）" />
-                    <NavItem icon={<Settings size={20} />} label="設定" />
                 </nav>
 
                 <div className="p-4 border-t border-slate-700 text-xs text-text-muted text-center">
