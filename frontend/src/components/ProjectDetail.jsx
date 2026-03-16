@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2, ShoppingCart } from 'lucide-react';
 
 const ProjectDetail = () => {
     const { projectId } = useParams();
@@ -48,13 +48,10 @@ const ProjectDetail = () => {
             await api.post(`/projects/${projectId}/cart`, cart);
             // 執行流程
             await api.post(`/projects/${projectId}/run`);
-            alert('流程已完成！請查看結果。');
-            // 取得結果
-            const res = await api.get(`/projects/${projectId}/results`);
-            setResults(res.data);
+            // 跳轉至結果頁
+            navigate(`/project/${projectId}/results`);
         } catch (error) {
             alert('執行失敗或逾時，請檢查伺服器日誌。');
-        } finally {
             setRunning(false);
         }
     };
@@ -154,98 +151,195 @@ const ProjectDetail = () => {
                         </div>
                     </div>
 
-                    {cart.shopping_cart.map((item, idx) => (
-                        <div key={idx} className="bg-surface border border-slate-700 rounded-lg p-5 hover:border-slate-500 transition-colors group">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1 mr-4">
-                                    <label className="text-xs text-text-muted uppercase font-bold tracking-wider mb-1 block">卡片名稱</label>
-                                    <input
-                                        type="text"
-                                        value={item.card_name_zh}
-                                        onChange={(e) => updateItem(idx, 'card_name_zh', e.target.value)}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 focus:outline-none focus:border-primary transition-colors font-medium text-lg"
-                                    />
-                                </div>
-                                <button onClick={() => removeItem(idx)} className="text-slate-600 hover:text-danger p-2 transition-colors">
-                                    <Trash2 size={20} />
-                                </button>
-                            </div>
+                    {cart.shopping_cart.map((item, idx) => {
+                        const imgUrl = item.image_url || (item.passcode ? `https://raw.githubusercontent.com/salix5/query-data/gh-pages/pics/${item.passcode}.jpg` : null);
 
-                            <div className="flex gap-4">
-                                <div className="w-24">
-                                    <label className="text-xs text-text-muted uppercase font-bold tracking-wider mb-1 block">數量</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={item.required_amount}
-                                        onChange={(e) => updateItem(idx, 'required_amount', parseInt(e.target.value))}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 focus:outline-none focus:border-primary text-center"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <label className="text-xs text-text-muted uppercase font-bold tracking-wider mb-1 block">目標卡號（按 Enter 新增）</label>
-                                    <div className="flex flex-wrap gap-2 items-center bg-slate-900 border border-slate-700 rounded px-3 py-2 min-h-[42px]">
-                                        {item.target_card_numbers.map((id, idIdx) => (
-                                            <span key={idIdx} className="bg-slate-700 text-xs px-2 py-1 rounded flex items-center gap-1">
-                                                {id}
-                                                <button onClick={() => removeCardId(idx, idIdx)} className="hover:text-danger">×</button>
-                                            </span>
-                                        ))}
-                                        <input
-                                            type="text"
-                                            placeholder="例如 DABL-JP001"
-                                            className="bg-transparent focus:outline-none min-w-[100px] text-sm"
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    addCardId(idx, e.target.value);
-                                                    e.target.value = '';
-                                                }
-                                            }}
+                        // 計算屬性字串
+                        let statStr = '';
+                        if (item.type && (item.type & 0x1)) { // MONSTER
+                            const attrNames = { 1: '地', 2: '水', 4: '炎', 8: '風', 16: '光', 32: '闇', 64: '神' };
+                            const raceNames = {
+                                0x1: '戰士族', 0x2: '魔法使族', 0x4: '天使族', 0x8: '惡魔族',
+                                0x10: '不死族', 0x20: '機械族', 0x40: '水族', 0x80: '炎族',
+                                0x100: '岩石族', 0x200: '鳥獸族', 0x400: '植物族', 0x800: '昆蟲族',
+                                0x1000: '雷族', 0x2000: '龍族', 0x4000: '獸族', 0x8000: '獸戰士族',
+                                0x10000: '恐龍族', 0x20000: '魚族', 0x40000: '海龍族', 0x80000: '爬蟲類族',
+                                0x100000: '超能族', 0x200000: '幻神獸族', 0x400000: '創造神族',
+                                0x800000: '幻龍族', 0x1000000: '電子界族', 0x2000000: '幻想魔族',
+                            };
+                            const level = item.level ? item.level & 0xff : '?';
+                            statStr = `★${level}`;
+                            if (item.attribute) statStr += ` / ${attrNames[item.attribute] || '？'}`;
+                            if (item.race) statStr += ` / ${raceNames[item.race] || '？族'}`;
+                            // 舊資料可能沒有 atk/def，先不強制顯示
+                        }
+
+                        // 判斷是否為編輯模式
+                        const isEditing = item.ui_inputVisible;
+
+                        return (
+                            <div key={idx} className="bg-surface border border-slate-700 rounded-xl p-4 hover:border-slate-500 transition-all group flex gap-4">
+                                {/* 卡圖 */}
+                                <div className="w-20 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-slate-800">
+                                    {imgUrl ? (
+                                        <img
+                                            src={imgUrl}
+                                            alt={item.card_name_zh}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
                                         />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-xs text-center p-1">
+                                            <div className="text-[10px] break-all">{item.passcode || '無圖'}</div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 卡片資訊 */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                    {/* 上半部：標題與操作列 */}
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="flex-1 min-w-0 pr-4">
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    value={item.card_name_zh}
+                                                    onChange={(e) => updateItem(idx, 'card_name_zh', e.target.value)}
+                                                    className="w-full max-w-xs bg-slate-900 border border-primary/50 text-white px-2 py-1 rounded focus:outline-none focus:border-primary font-bold text-lg mb-1"
+                                                    onBlur={() => updateItem(idx, 'ui_inputVisible', false)}
+                                                    autoFocus
+                                                />
+                                            ) : (
+                                                <h3
+                                                    className="font-bold text-lg text-white truncate cursor-pointer hover:text-primary transition-colors inline-block"
+                                                    onClick={() => updateItem(idx, 'ui_inputVisible', true)}
+                                                    title="點擊編輯卡名"
+                                                >
+                                                    {item.card_name_zh}
+                                                </h3>
+                                            )}
+
+                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                {item.type && (
+                                                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${item.type & 0x1 ? 'bg-amber-500/20 text-amber-400' :
+                                                        item.type & 0x2 ? 'bg-emerald-500/20 text-emerald-400' :
+                                                            item.type & 0x4 ? 'bg-pink-500/20 text-pink-400' :
+                                                                'bg-slate-500/20 text-slate-400'
+                                                        }`}>
+                                                        {item.type & 0x1 ? '怪獸' : item.type & 0x2 ? '魔法' : item.type & 0x4 ? '陷阱' : '卡片'}
+                                                    </span>
+                                                )}
+                                                {statStr && <span className="text-xs text-text-muted">{statStr}</span>}
+                                                {item.cid && <span className="text-xs text-text-muted font-mono bg-slate-800 px-1.5 py-0.5 rounded">CID:{item.cid}</span>}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3 flex-shrink-0">
+                                            <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-9">
+                                                <button
+                                                    className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full"
+                                                    onClick={() => updateItem(idx, 'required_amount', Math.max(1, item.required_amount - 1))}
+                                                >-</button>
+                                                <span className="w-8 text-center font-bold text-sm text-white">{item.required_amount}</span>
+                                                <button
+                                                    className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full"
+                                                    onClick={() => updateItem(idx, 'required_amount', item.required_amount + 1)}
+                                                >+</button>
+                                            </div>
+                                            <button onClick={() => removeItem(idx)} className="text-slate-500 hover:text-danger p-2 transition-colors rounded hover:bg-danger/10">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* 下半部：目標卡號與稀有度標籤 */}
+                                    <div className="mt-auto pt-2">
+                                        <div className="flex flex-wrap gap-1.5 items-center">
+                                            <span className="text-xs text-text-muted font-medium mr-1">目標版本:</span>
+                                            {item.target_card_numbers.length === 0 ? (
+                                                <span className="text-xs text-danger/80 bg-danger/10 px-2 py-0.5 rounded italic">未指定卡號，爬蟲將跳過此卡</span>
+                                            ) : (
+                                                item.target_card_numbers.map((cardObj, idIdx) => {
+                                                    // 舊資料相容：如果是字串，轉為物件形式
+                                                    const isString = typeof cardObj === 'string';
+                                                    const displayNum = isString ? cardObj : cardObj.card_number;
+                                                    const rarityName = isString ? null : cardObj.rarity_name;
+
+                                                    // 根據稀有度決定標籤顏色
+                                                    let bgColor = "bg-slate-700", textColor = "text-slate-200", borderColor = "border-transparent";
+                                                    if (rarityName) {
+                                                        const r = rarityName.toLowerCase();
+                                                        if (r.includes('secret') || r.includes('半鑽') || r.includes('白鑽')) { bgColor = "bg-rose-900/40"; textColor = "text-rose-200"; borderColor = "border-rose-500/30"; }
+                                                        else if (r.includes('ultra') || r.includes('金亮')) { bgColor = "bg-amber-900/40"; textColor = "text-amber-200"; borderColor = "border-amber-500/30"; }
+                                                        else if (r.includes('super') || r.includes('亮面')) { bgColor = "bg-blue-900/40"; textColor = "text-blue-200"; borderColor = "border-blue-500/30"; }
+                                                        else if (r.includes('normal') || r.includes('普卡')) { bgColor = "bg-slate-800"; textColor = "text-slate-300"; borderColor = "border-slate-600"; }
+                                                        else { bgColor = "bg-purple-900/40"; textColor = "text-purple-200"; borderColor = "border-purple-500/30"; }
+                                                    }
+
+                                                    return (
+                                                        <div key={idIdx} className={`group/tag flex items-center text-xs px-2 py-1 rounded border ${bgColor} ${textColor} ${borderColor} transition-colors cursor-default`} title={isString ? '指定卡號' : `${cardObj.pack_name} - ${rarityName}`}>
+                                                            <span className="font-mono">{displayNum}</span>
+                                                            {rarityName && <span className="ml-1 opacity-75 hidden sm:inline-block">({rarityName})</span>}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); removeCardId(idx, idIdx); }}
+                                                                className="ml-1.5 -mr-0.5 opacity-50 hover:opacity-100 hover:text-danger focus:outline-none transition-opacity"
+                                                            >×</button>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+
+                                            {/* 手動新增卡號 輸入框 */}
+                                            <div className="relative flex items-center">
+                                                {item.ui_inputVisible ? (
+                                                    <input
+                                                        type="text"
+                                                        placeholder="輸入卡號..."
+                                                        className="bg-slate-900 border border-primary/50 text-white text-xs px-2 py-1 rounded w-24 focus:outline-none focus:border-primary"
+                                                        onBlur={() => updateItem(idx, 'ui_inputVisible', false)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && e.target.value.trim()) {
+                                                                addCardId(idx, e.target.value.trim());
+                                                                e.target.value = '';
+                                                            } else if (e.key === 'Escape') {
+                                                                updateItem(idx, 'ui_inputVisible', false);
+                                                            }
+                                                        }}
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <button
+                                                        onClick={() => updateItem(idx, 'ui_inputVisible', true)}
+                                                        className="text-xs text-primary/70 hover:text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors flex items-center gap-1 border border-dashed border-primary/30"
+                                                    >
+                                                        <Plus size={12} /> 手動增刪
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     {cart.shopping_cart.length === 0 && (
-                        <div className="p-8 text-center border-2 border-dashed border-slate-700 rounded-lg text-text-muted">
-                            購物車是空的。點擊「搜尋卡片」或「手動新增」來新增卡片。
+                        <div className="p-12 text-center border border-dashed border-slate-700 bg-surface/50 rounded-xl text-text-muted flex flex-col items-center">
+                            <ShoppingCart size={48} className="opacity-20 mb-4 text-primary" />
+                            <h3 className="text-lg font-medium text-white mb-2">購物車是空的</h3>
+                            <p className="text-sm max-w-sm mb-6">點擊上方「搜尋卡片」來尋找想要的卡片，系統會自動帶入卡號與稀有度。</p>
+                            <button
+                                onClick={() => navigate(`/project/${projectId}/search`)}
+                                className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                            >
+                                前往搜尋卡片
+                            </button>
                         </div>
                     )}
                 </div>
 
                 {/* 右欄：設定與結果 */}
                 <div className="space-y-6">
-                    {/* 結果面板 */}
-                    {results && (
-                        <div className="bg-slate-900/50 border border-green-500/30 rounded-lg p-5">
-                            <h3 className="text-lg font-bold text-green-400 mb-4 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                最佳化結果
-                            </h3>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-text-muted">總花費：</span>
-                                    <span className="font-bold text-lg text-white">${results.summary.grand_total}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-text-muted">運費：</span>
-                                    <span>${results.summary.total_shipping_cost}</span>
-                                </div>
-                                <div className="h-px bg-slate-700 my-2"></div>
-                                <div className="space-y-2">
-                                    <div className="font-medium text-text-muted mb-1">購買店家：</div>
-                                    {Object.keys(results.sellers).map(seller => (
-                                        <div key={seller} className="flex justify-between text-xs bg-slate-800 p-2 rounded">
-                                            <span className="truncate max-w-[150px]">{seller}</span>
-                                            <span className="text-primary">${results.sellers[seller].items_subtotal}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* 全域設定面板 */}
                     <div className="bg-surface border border-slate-700 rounded-lg p-5">

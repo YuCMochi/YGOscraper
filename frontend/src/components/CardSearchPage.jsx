@@ -235,9 +235,18 @@ const CardSearchPage = () => {
                 };
             }
 
-            // 3. 加入新卡片
+            // 3. 加入新卡片 (包含豐富的卡片資訊)
             cartData.shopping_cart.push({
                 card_name_zh: card.tw_name,
+                passcode: card.id,
+                cid: card.cid,
+                type: card.type,
+                atk: card.atk,
+                def: card.def,
+                level: card.level,
+                race: card.race,
+                attribute: card.attribute,
+                image_url: card.image_url,
                 target_card_numbers: cardNumbers,
                 required_amount: 1,
             });
@@ -262,6 +271,15 @@ const CardSearchPage = () => {
                 }
                 cartData.shopping_cart.push({
                     card_name_zh: card.tw_name,
+                    passcode: card.id,
+                    cid: card.cid,
+                    type: card.type,
+                    atk: card.atk,
+                    def: card.def,
+                    level: card.level,
+                    race: card.race,
+                    attribute: card.attribute,
+                    image_url: card.image_url,
                     target_card_numbers: [],
                     required_amount: 1,
                 });
