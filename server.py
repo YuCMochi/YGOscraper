@@ -282,10 +282,16 @@ async def get_card_numbers_by_cid(cid: int):
         data = konami_scraper.scrape_cids([str(cid)])
         card_numbers = []
         if data and str(cid) in data:
-            # 從版本資料中提取卡號字串（scrape_cids 回傳 dict list）
+            # 從版本資料中提取完整資訊（保留稀有度等）
             versions = data[str(cid)]
-            card_numbers = [v['card_number'] for v in versions if v.get('card_number')]
-        print(f"CID {cid} 的卡號: {card_numbers}")
+            for v in versions:
+                if v.get('card_number'):
+                    card_numbers.append({
+                        "card_number": v['card_number'],
+                        "rarity_name": v.get('rarity_name', ''),
+                        "pack_name": v.get('pack_name', '')
+                    })
+        print(f"CID {cid} 的卡號版本: {len(card_numbers)} 個")
         return {"cid": cid, "card_numbers": card_numbers}
     except Exception as e:
         print(f"爬取 CID {cid} 卡號時發生錯誤: {e}")
