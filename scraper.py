@@ -33,7 +33,7 @@ ITEMS_PER_PAGE = 110 # 每次搜尋抓取的商品數量
 DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 MAX_CONCURRENT_REQUESTS = 10  # 同一時間最多可以發送幾個請求 (避免被網站封鎖)
 
-__version__ = "2.0.0"
+__version__ = "0.3.0"
 
 class RutenScraper:
     def __init__(self):
