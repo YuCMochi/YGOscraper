@@ -10,6 +10,7 @@ app/services/storage.py - 專案資料的統一讀寫管理
 """
 import os
 import json
+import copy  # 用於 deepcopy，確保預設結構每次回傳獨立的物件
 
 # ============================================================
 # 常數設定
@@ -60,14 +61,17 @@ def get_cart(project_name: str) -> dict:
     path = _get_cart_path(project_name)
 
     if not os.path.exists(path):
-        return dict(_DEFAULT_CART)
+        # deepcopy 確保每次回傳的是完全獨立的新物件
+        # 若用 dict(_DEFAULT_CART)，巢狀的 global_settings 仍是同一個參考（淺拷貝 Bug）
+        return copy.deepcopy(_DEFAULT_CART)
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         # 確保 global_settings 欄位存在（向下兼容舊格式）
         if "global_settings" not in data:
-            data["global_settings"] = dict(_DEFAULT_CART["global_settings"])
+            # deepcopy 確保補丁進去的是獨立的新物件
+            data["global_settings"] = copy.deepcopy(_DEFAULT_CART["global_settings"])
         return data
     except (json.JSONDecodeError, IOError) as e:
         raise RuntimeError(f"讀取購物車 {path} 失敗: {e}") from e

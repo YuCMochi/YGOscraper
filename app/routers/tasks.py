@@ -10,10 +10,10 @@ Phase 2（腳本模組化）完成後，將改為直接呼叫 Service 類別。
 """
 import os
 import sys
-import json
 import subprocess
 
 from fastapi import APIRouter, HTTPException
+from app.services import storage
 
 router = APIRouter(prefix="/api", tags=["tasks"])
 
@@ -79,16 +79,11 @@ async def run_process(project_name: str):
 async def get_results(project_name: str):
     """
     讀取計算完成的最佳採購方案（plan.json）。
-    
     若結果檔案不存在（尚未執行爬蟲/計算），回傳 404。
     """
-    path = os.path.abspath(os.path.join("data", project_name, "plan.json"))
-    
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="尚未有計算結果，請先執行爬蟲流程")
-    
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"讀取結果失敗: {str(e)}")
+        return storage.get_plan(project_name)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
