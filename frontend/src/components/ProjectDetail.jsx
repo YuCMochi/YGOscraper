@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2, ShoppingCart } from 'lucide-react';
+import { attrNames, raceNames } from '../constants/cardTypes';
 
 const ProjectDetail = () => {
     const { projectId } = useParams();
@@ -157,16 +158,6 @@ const ProjectDetail = () => {
                         // 計算屬性字串
                         let statStr = '';
                         if (item.type && (item.type & 0x1)) { // MONSTER
-                            const attrNames = { 1: '地', 2: '水', 4: '炎', 8: '風', 16: '光', 32: '闇', 64: '神' };
-                            const raceNames = {
-                                0x1: '戰士族', 0x2: '魔法使族', 0x4: '天使族', 0x8: '惡魔族',
-                                0x10: '不死族', 0x20: '機械族', 0x40: '水族', 0x80: '炎族',
-                                0x100: '岩石族', 0x200: '鳥獸族', 0x400: '植物族', 0x800: '昆蟲族',
-                                0x1000: '雷族', 0x2000: '龍族', 0x4000: '獸族', 0x8000: '獸戰士族',
-                                0x10000: '恐龍族', 0x20000: '魚族', 0x40000: '海龍族', 0x80000: '爬蟲類族',
-                                0x100000: '超能族', 0x200000: '幻神獸族', 0x400000: '創造神族',
-                                0x800000: '幻龍族', 0x1000000: '電子界族', 0x2000000: '幻想魔族',
-                            };
                             const level = item.level ? item.level & 0xff : '?';
                             statStr = `★${level}`;
                             if (item.attribute) statStr += ` / ${attrNames[item.attribute] || '？'}`;
