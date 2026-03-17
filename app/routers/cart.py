@@ -5,60 +5,32 @@ app/routers/cart.py - 購物車管理的 API 路由
 - GET  /api/projects/{project_name}/cart : 讀取購物車內容
 - POST /api/projects/{project_name}/cart : 儲存/更新購物車內容
 """
-import os
-import json
-
 from fastapi import APIRouter, HTTPException
-from app.schemas import CartData, GlobalSettings
+from app.schemas import CartData
+from app.services import storage
 
 router = APIRouter(prefix="/api", tags=["cart"])
 
 
 @router.get("/projects/{project_name}/cart")
 async def get_cart(project_name: str):
-    """
-    讀取特定專案的購物車內容（cart.json）。
-    若該專案的 cart.json 不存在，會回傳一份空白的預設結構。
-    """
-    path = os.path.abspath(os.path.join("data", project_name, "cart.json"))
-    
-    if not os.path.exists(path):
-        # 回傳預設的空購物車結構
-        return {
-            "shopping_cart": [],
-            "global_settings": {
-                "default_shipping_cost": 60,
-                "min_purchase_limit": 0,
-                "global_exclude_keywords": [],
-                "global_exclude_seller": [],
-            },
-        }
-    
+    """讀取特定專案的購物車內容（cart.json）。"""
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"讀取購物車失敗: {str(e)}")
+        return storage.get_cart(project_name)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/projects/{project_name}/cart")
 async def save_cart(project_name: str, cart_data: CartData):
     """
     儲存/更新特定專案的購物車內容（cart.json）。
-    
-    Pydantic 會在資料進入這裡之前自動驗證格式。
-    若格式錯誤（如缺少必填欄位），FastAPI 會自動回傳 422 錯誤說明。
+    Pydantic 會在資料進入此處前自動驗證格式。
     """
-    path = os.path.abspath(os.path.join("data", project_name, "cart.json"))
-    
     try:
-        # model_dump() 將 Pydantic Model 轉回 dict，exclude_none=False 保留所有欄位
-        # mode="json" 確保特殊型別（如 Union）正確序列化
+        # model_dump 將 Pydantic Model 轉為 dict，by_alias=True 確保 "def" 欄位正確輸出
         data_dict = cart_data.model_dump(mode="json", by_alias=True)
-        
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data_dict, f, ensure_ascii=False, indent=4)
-        
+        storage.save_cart(project_name, data_dict)
         return {"status": "success"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"儲存購物車失敗: {str(e)}")
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))

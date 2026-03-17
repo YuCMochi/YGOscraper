@@ -15,75 +15,35 @@ server.py - YGOscraper API 應用程式入口點
 所有 Pydantic 資料結構已移至 app/schemas.py 統一管理。
 """
 import os
-import json
-import sqlite3
-import urllib.request
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# 引入 CardDatabaseService，統一管理卡片資料庫的載入與查詢
+from app.services.card_db import CardDatabaseService
+
 # ============================================================
-# 全域共用資源（由 lifespan 在啟動時初始化）
+# 建立共用的 CardDatabaseService 實例
+# 這個實例會在整個應用程式生命週期中共用（包含所有 routers）
 # ============================================================
-# passcode → cid 的對應字典，從 salix5 的 cid_table.json 載入
-_PASSCODE_TO_CID_MAP: dict = {}
-# 卡片資料庫的記憶體中 SQLite 連線
-_LOCAL_CARD_DB = None
+card_db = CardDatabaseService()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     伺服器的生命週期管理：
-    - 啟動時（yield 前）：從網路載入 CID 對應表和卡片資料庫到記憶體中
+    - 啟動時（yield 前）：初始化 CardDatabaseService（載入 cards.cdb + CID 對應表）
     - 關閉時（yield 後）：關閉資料庫連線
     """
-    global _LOCAL_CARD_DB, _PASSCODE_TO_CID_MAP
-
-    # --- 載入 CID 對應表 ---
-    print("載入 CID 對應表 (cid_table.json) 到記憶體...")
-    try:
-        req = urllib.request.Request(
-            "https://raw.githubusercontent.com/salix5/heliosphere/master/data/cid_table.json",
-            headers={"User-Agent": "Mozilla/5.0"},
-        )
-        with urllib.request.urlopen(req) as response:
-            cid_data = json.loads(response.read().decode("utf-8"))
-            for cid_str, passcode_val in cid_data.items():
-                _PASSCODE_TO_CID_MAP[str(passcode_val)] = cid_str
-        print(f"成功載入 {len(_PASSCODE_TO_CID_MAP)} 筆 CID 對應資料。")
-    except Exception as e:
-        print(f"[警告] 載入 CID 對應資料失敗，卡片搜尋將缺少 CID 資訊: {e}")
-
-    # --- 載入 cards.cdb 卡片資料庫 ---
-    print("載入卡片資料庫 (cards.cdb) 到記憶體...")
-    try:
-        req = urllib.request.Request(
-            "https://raw.githubusercontent.com/salix5/cdb/gh-pages/cards.cdb",
-            headers={"User-Agent": "Mozilla/5.0"},
-        )
-        with urllib.request.urlopen(req) as response:
-            db_data = response.read()
-
-        with open("/tmp/temp_cards.cdb", "wb") as f:
-            f.write(db_data)
-
-        source_db = sqlite3.connect("/tmp/temp_cards.cdb")
-        # check_same_thread=False 讓 FastAPI 的非同步環境可以安全地使用此連線
-        _LOCAL_CARD_DB = sqlite3.connect(":memory:", check_same_thread=False)
-        source_db.backup(_LOCAL_CARD_DB)
-        source_db.close()
-        os.remove("/tmp/temp_cards.cdb")
-        print("成功載入 cards.cdb 到記憶體。")
-    except Exception as e:
-        print(f"[警告] 載入 cards.cdb 失敗，卡片搜尋功能將無法使用: {e}")
+    # 初始化卡片資料庫（內部會自動載入 cdb + cid_table.json）
+    card_db.initialize()
 
     yield  # 伺服器在此運行，等待請求
 
-    # 關閉時清理資源
-    if _LOCAL_CARD_DB:
-        _LOCAL_CARD_DB.close()
+    # 伺服器關閉時清理資源
+    card_db.close()
 
 
 # ============================================================
