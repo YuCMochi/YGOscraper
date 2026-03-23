@@ -30,12 +30,12 @@
 - [x] 收編 `file_genarator.py` → `app/services/project_service.py` (修正拼寫 genarator→generator)
 - [x] 為未來自建 DB 預留介面：定義 `CardDatabaseService` 抽象層
 
-### 階段五：腳本模組化（淘汰 subprocess）⬜ 未開始
-> 審計發現：`scraper.py` 的 `RutenScraper` 和 `konami_scraper.py` 的 `KonamiScraper` 已經是類別化的，可直接 import 使用。`clean_csv.py` 和 `caculator.py` 仍為獨立函式，需封裝。
-- [ ] `clean_csv.py` → `app/services/cleaner_service.py` (封裝為 `DataCleaner` 類別)
-- [ ] `caculator.py` → `app/services/calculator_service.py` (封裝為 `PurchaseOptimizer` 類別)
-- [ ] 移動 `scraper.py`, `konami_scraper.py` 到 `app/services/` 下 (已有類別，僅需搬移)
-- [ ] 修改 `tasks.py` router：用 `import` 取代 `subprocess.run()`
+### 階段五：腳本模組化（淘汰 subprocess）✅
+- [x] `clean_csv.py` → `app/services/cleaner_service.py` (封裝為 `DataCleaner` 類別)
+- [x] `caculator.py` → `app/services/calculator_service.py` (封裝為 `PurchaseOptimizer` 類別)
+- [x] 移動 `scraper.py`, `konami_scraper.py` 到 `app/services/` 下
+- [x] 修改 `tasks.py` router：用 `import` 取代 `subprocess.run()`
+- [x] 修復 `cards.py` 的反向依賴（`import server` → `app.state` 注入）
 
 ### 階段六：前端架構梳理 🔶 部分完成
 - [x] 抽取 `CardSearchPage.jsx` 中的常數 (卡片類型/屬性/種族對應表) 到 `src/constants/cardTypes.js`
@@ -91,7 +91,8 @@ YGOscraper/
 
 ### 2026-03-23
 - 將開發計劃從 `.gemini/antigravity/brain/` 複製到專案 `docs/` 目錄，方便隨時查看
-- 目前進度：階段一～四完成，下一步是階段五（腳本模組化）
+- 完成階段五（腳本模組化）：建立 4 個新 Service、淘汰 subprocess、修復 cards.py 反向依賴
+- 目前進度：階段一～五完成，下一步是階段六（前端錯誤處理）
 
 ### 2026-03-18 (Refactoring Frontend Code 對話)
 - 完成前端常數抽取（`cardTypes.js`），消除重複的 `attrNames`/`raceNames`
