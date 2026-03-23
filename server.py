@@ -36,9 +36,15 @@ async def lifespan(app: FastAPI):
     伺服器的生命週期管理：
     - 啟動時（yield 前）：初始化 CardDatabaseService（載入 cards.cdb + CID 對應表）
     - 關閉時（yield 後）：關閉資料庫連線
+
+    透過 app.state 把 card_db 共享給所有 router，
+    這樣 router 就不需要反向 import server 來取得它（消除循環引用）。
     """
     # 初始化卡片資料庫（內部會自動載入 cdb + cid_table.json）
     card_db.initialize()
+
+    # 掛載到 app.state，讓 router 透過 request.app.state.card_db 取用
+    app.state.card_db = card_db
 
     yield  # 伺服器在此運行，等待請求
 
