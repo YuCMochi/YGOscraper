@@ -6,6 +6,7 @@ numpy>=1.24.0
 pulp
 tabulate
 watchdog
+pydantic>=2.0.0
 fastapi
 uvicorn
 python-multipart
