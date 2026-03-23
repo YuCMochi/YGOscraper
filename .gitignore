@@ -19,6 +19,7 @@ node_modules/
 .vscode/
 .idea/
 .agentrules
+.agents/
 
 # Project Data
 data/
