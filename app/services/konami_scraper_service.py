@@ -4,10 +4,9 @@ app/services/konami_scraper_service.py - Konami 爬蟲的薄包裝層
 這個薄包裝層（Thin Wrapper）讓 routers 可以透過乾淨的介面呼叫 KonamiScraper，
 而不需要直接接觸底層的爬蟲細節。
 
-原始邏輯仍位於根目錄的 konami_scraper.py（其 KonamiScraper 類別），
-未來移動或替換時只需修改此 service 檔案。
+原始邏輯已搬移至 app/services/konami_scraper.py（KonamiScraper 類別）。
 """
-from konami_scraper import KonamiScraper
+from app.services.konami_scraper import KonamiScraper
 
 
 class KonamiScraperService:
