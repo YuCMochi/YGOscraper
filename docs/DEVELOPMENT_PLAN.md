@@ -37,9 +37,9 @@
 - [x] 修改 `tasks.py` router：用 `import` 取代 `subprocess.run()`
 - [x] 修復 `cards.py` 的反向依賴（`import server` → `app.state` 注入）
 
-### 階段六：前端架構梳理 🔶 部分完成
+### 階段六：前端架構梳理 ✅
 - [x] 抽取 `CardSearchPage.jsx` 中的常數 (卡片類型/屬性/種族對應表) 到 `src/constants/cardTypes.js`
-- [ ] 確認 API 錯誤處理是否完善 (如網路斷線、後端 500)
+- [x] 確認 API 錯誤處理是否完善 (如網路斷線、後端 500)
 - [x] 消除 `ProjectDetail.jsx` 中重複定義的 `attrNames` / `raceNames`
 
 ---
@@ -51,6 +51,11 @@
 - [ ] 🟡 `data/cart.json` 和 `frontend/package.json` 有 Git 權限問題 (`Operation not permitted`)
 - [x] 🟢 `file_genarator.py` 拼寫錯誤：已建立 `app/services/project_service.py` 替代
 - [x] 🟢 `storage.py` 淺拷貝 Bug：已改用 `copy.deepcopy()`
+- [x] 🔴 **[Critical]** `ResultsPage.jsx` 結果頁白畫面：前後端資料結構不匹配 → 已在 `tasks.py` 的 `get_results` 中做格式轉換修復
+  - **後端** `calculator_service.py` 輸出的 `plan.json` 格式：`{ sellers: { 賣家ID: {items, items_subtotal} }, summary: {total_items_cost, total_shipping_cost, grand_total} }`
+  - **前端** `ResultsPage.jsx` 期望的格式：`{ total_cost, total_item_cost, total_shipping_cost, missing_cards, plan: [{seller, subtotal, shipping_cost, items: [{name, url, card_name_zh, price, buy_count, card_number}]}] }`
+  - 存取 `results.plan.length` 時因 `results.plan` 為 `undefined` 而拋出 `TypeError`，導致整個頁面 Crash 變成白畫面
+  - 修復方向：在 API 回傳層（`tasks.py` 的 `get_results`）或前端 `ResultsPage.jsx` 中做格式轉換，使兩端一致
 
 ---
 
@@ -90,6 +95,9 @@ YGOscraper/
 ## 📝 開發備忘錄
 
 ### 2026-03-24
+- 修復 `ResultsPage.jsx` 白畫面 Critical Bug：`tasks.py` 的 `get_results` 新增資料格式轉換
+- 完成階段六（前端錯誤處理）：新建 `ApiErrorBanner.jsx` 共用元件、更新 `api.js` interceptor
+- 所有頁面的 API 錯誤現在會顯示友善的使用者提示（取代 `alert()` 和靜默的 `console.error`）
 - 集中管理外部 URL 至 `app/config.py`，消除散落各處的 hardcoded 網址
 - 統一版本號為 `v0.2.0`（SemVer 開發期慣例），更新 README 目錄結構和版本歷史
 - 合併 `refactor/backend-architecture` 回 `main`
@@ -97,7 +105,7 @@ YGOscraper/
 ### 2026-03-23
 - 將開發計劃從 `.gemini/antigravity/brain/` 複製到專案 `docs/` 目錄，方便隨時查看
 - 完成階段五（腳本模組化）：建立 4 個新 Service、淘汰 subprocess、修復 cards.py 反向依賴
-- 目前進度：階段一～五完成，下一步是階段六（前端錯誤處理）
+- 目前進度：階段一～六完成，下一步是 v0.3.0 計畫中的功能
 
 ### 2026-03-18 (Refactoring Frontend Code 對話)
 - 完成前端常數抽取（`cardTypes.js`），消除重複的 `attrNames`/`raceNames`
@@ -123,7 +131,7 @@ YGOscraper/
 | **v0.2.0** | ✅ 完成 | 後端架構重構 | Service 模組化、API 路由拆分、Pydantic Schema、外部 URL 集中管理 |
 | **v0.3.0** | ⬜ 計畫中 | 前端強化 | API 錯誤處理完善、Loading 狀態、斷線重連提示 |
 | **v0.4.0** | 💡 構想中 | 資料持久化 | 自建卡片 DB（取代每次啟動下載）、歷史採購方案比較 |
-| **v0.5.0** | 💡 構想中 | 爬蟲升級 | 非同步爬蟲效能優化、支援更多拍賣平台（蝦皮？）、爬蟲進度即時回報（WebSocket） |
+| **v0.5.0** | 💡 構想中 | 爬蟲升級 | 非同步爬蟲效能優化、爬蟲進度即時回報（WebSocket） |
 | **v0.6.0** | 💡 構想中 | 使用者體驗 | 卡片圖鑑瀏覽、搜尋歷史記錄、購物車匯出/匯入、深色/淺色主題切換 |
 | **v1.0.0** | 🎯 目標 | 正式版 | 功能穩定、文件齊全、可供他人使用與部署（Docker / Railway） |
 
