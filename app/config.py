@@ -24,7 +24,7 @@ CID_TABLE_URL = (
 
 # 卡片圖片的 Base URL，使用時需在後面加上 "{passcode}.jpg"
 CARD_IMAGE_BASE_URL = (
-    "https://raw.githubusercontent.com/salix5/query-data/gh-pages/pics"
+    "https://raw.githubusercontent.com/salix5/query-data/refs/heads/master/pics/"
 )
 
 # ============================================================
