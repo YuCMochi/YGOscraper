@@ -30,3 +30,4 @@ output/
 *.json
 !frontend/package.json
 !data/cart.json
+data/
