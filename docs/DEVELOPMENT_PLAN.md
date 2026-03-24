@@ -89,6 +89,10 @@ YGOscraper/
 
 ## 📝 開發備忘錄
 
+### 2026-03-24
+- 集中管理外部 URL 至 `app/config.py`，消除散落各處的 hardcoded 網址
+- 影響檔案：`card_db.py`、`konami_scraper.py`、`ruten_scraper.py`
+
 ### 2026-03-23
 - 將開發計劃從 `.gemini/antigravity/brain/` 複製到專案 `docs/` 目錄，方便隨時查看
 - 完成階段五（腳本模組化）：建立 4 個新 Service、淘汰 subprocess、修復 cards.py 反向依賴
