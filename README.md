@@ -67,10 +67,10 @@ npm install
 
 ```bash
 # 1. 進入專案根目錄
-cd /Users/Mochi/Documents/Development/YGOscraper
+cd /Users/Mochi/Development/YGOscraper
 
 # 2. 啟動 Python 虛擬環境
-source env/bin/activate
+source .venv/bin/activate
 
 # 3. 啟動後端 API 伺服器
 uvicorn server:app --reload
@@ -91,7 +91,7 @@ INFO:     ✅ cid_table.json 已成功載入
 
 ```bash
 # 1. 進入前端目錄
-cd /Users/Mochi/Documents/Development/YGOscraper/frontend
+cd /Users/Mochi/Development/YGOscraper/frontend
 
 # 2. 啟動前端開發伺服器
 npm run dev
