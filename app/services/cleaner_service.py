@@ -103,7 +103,16 @@ class DataCleaner:
 
         for item in config.get("shopping_cart", []):
             c_name = item.get("card_name_zh")
-            t_ids = item.get("target_card_numbers", [])
+            raw_ids = item.get("target_card_numbers", [])
+            # target_card_numbers 可能是純字串或字典格式，統一轉為字串列表
+            t_ids = []
+            for tid in raw_ids:
+                if isinstance(tid, dict):
+                    cn = tid.get("card_number", "")
+                    if cn:
+                        t_ids.append(cn)
+                elif isinstance(tid, str) and tid:
+                    t_ids.append(tid)
             if c_name:
                 card_target_map[c_name] = t_ids
             all_target_card_numbers.extend(t_ids)

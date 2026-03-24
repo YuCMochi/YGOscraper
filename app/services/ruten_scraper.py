@@ -339,11 +339,21 @@ class RutenScraper:
                 continue
 
             for target_card_number in target_card_numbers:
-                logger.info(f"開始搜尋卡片：{card_name}, ID: {target_card_number}")
+                # target_card_numbers 可能是純字串 "DABL-JP035"
+                # 或是字典 {"card_number": "DABL-JP035", "rarity_name": "...", ...}
+                if isinstance(target_card_number, dict):
+                    card_number_str = target_card_number.get("card_number", "")
+                else:
+                    card_number_str = str(target_card_number)
+
+                if not card_number_str:
+                    continue
+
+                logger.info(f"開始搜尋卡片：{card_name}, ID: {card_number_str}")
 
                 # 限制最多 5 頁，避免抓太久
                 products = await self._process_products_async(
-                    target_card_number, max_pages=5
+                    card_number_str, max_pages=5
                 )
 
                 # 標記這是哪張卡片的搜尋結果
