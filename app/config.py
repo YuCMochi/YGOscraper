@@ -14,7 +14,7 @@ app/config.py - 外部服務 URL 與設定的統一管理
 
 # 卡片資料庫（SQLite 格式），啟動時下載並載入記憶體
 CARDS_CDB_URL = (
-    "https://raw.githubusercontent.com/salix5/cdb/gh-pages/cards.cdb"
+    "https://github.com/salix5/cdb/releases/download/snapshot/cards.cdb"
 )
 
 # Passcode → CID 的對照表（JSON 格式），啟動時下載並載入記憶體
