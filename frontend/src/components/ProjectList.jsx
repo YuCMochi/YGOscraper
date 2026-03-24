@@ -2,18 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { FolderPlus, FolderOpen, Loader2 } from 'lucide-react';
+import ApiErrorBanner from './ApiErrorBanner';
 
 const ProjectList = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
+    const [error, setError] = useState(null);
 
     const fetchProjects = async () => {
         try {
             const res = await api.get('/projects');
             setProjects(res.data);
-        } catch (error) {
-            console.error("Failed to fetch projects", error);
+            setError(null);
+        } catch (err) {
+            console.error("Failed to fetch projects", err);
+            setError(err);
         } finally {
             setLoading(false);
         }
@@ -24,8 +28,9 @@ const ProjectList = () => {
         try {
             await api.post('/projects');
             await fetchProjects();
-        } catch (error) {
-            console.error("Failed to create project", error);
+        } catch (err) {
+            console.error("Failed to create project", err);
+            setError(err);
         } finally {
             setCreating(false);
         }
@@ -45,6 +50,8 @@ const ProjectList = () => {
 
     return (
         <div className="space-y-6">
+            {/* API 錯誤提示 */}
+            <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
             <div className="flex justify-between items-center">
                 <div>
                     <h3 className="text-2xl font-bold text-white">我的專案</h3>

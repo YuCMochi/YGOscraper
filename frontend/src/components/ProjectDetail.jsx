@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2, ShoppingCart } from 'lucide-react';
+import ApiErrorBanner from './ApiErrorBanner';
 import { attrNames, raceNames } from '../constants/cardTypes';
 
 const ProjectDetail = () => {
@@ -12,6 +13,8 @@ const ProjectDetail = () => {
     const [saving, setSaving] = useState(false);
     const [running, setRunning] = useState(false);
     const [results, setResults] = useState(null);
+    const [error, setError] = useState(null);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     // 取得購物車資料
     useEffect(() => {
@@ -31,11 +34,14 @@ const ProjectDetail = () => {
     // 儲存購物車
     const handleSave = async () => {
         setSaving(true);
+        setError(null);
         try {
             await api.post(`/projects/${projectId}/cart`, cart);
-            alert('購物車已儲存！');
-        } catch (error) {
-            alert('儲存失敗，請檢查後端是否正常運作。');
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
+        } catch (err) {
+            console.error('儲存失敗:', err);
+            setError(err);
         } finally {
             setSaving(false);
         }
@@ -44,6 +50,7 @@ const ProjectDetail = () => {
     // 執行爬蟲流程
     const handleRun = async () => {
         setRunning(true);
+        setError(null);
         try {
             // 先儲存
             await api.post(`/projects/${projectId}/cart`, cart);
@@ -51,8 +58,9 @@ const ProjectDetail = () => {
             await api.post(`/projects/${projectId}/run`);
             // 跳轉至結果頁
             navigate(`/project/${projectId}/results`);
-        } catch (error) {
-            alert('執行失敗或逾時，請檢查伺服器日誌。');
+        } catch (err) {
+            console.error('執行失敗:', err);
+            setError(err);
             setRunning(false);
         }
     };
@@ -102,6 +110,16 @@ const ProjectDetail = () => {
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
+            {/* API 錯誤提示 */}
+            <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
+
+            {/* 儲存成功提示 */}
+            {saveSuccess && (
+                <div className="flex items-center gap-2 p-3 rounded-xl border bg-emerald-900/30 border-emerald-500/40 text-emerald-200 text-sm">
+                    ✓ 購物車已儲存
+                </div>
+            )}
+
             {/* 頂部導覽列 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">

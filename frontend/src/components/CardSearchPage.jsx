@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Search, Loader2, ShoppingCart, Check, Database } from 'lucide-react';
 import api from '../lib/api';
+import ApiErrorBanner from './ApiErrorBanner';
 
 // 從共用的 cardTypes.js 引入所有卡片常數與 helper 函數
 import {
@@ -28,6 +29,7 @@ const CardSearchPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searching, setSearching] = useState(false);
+    const [searchError, setSearchError] = useState(null);
 
     // 加入購物車狀態（追蹤哪些卡正在處理 / 已加入）
     const [addingCards, setAddingCards] = useState({}); // { cid: 'loading' | 'done' }
@@ -46,6 +48,7 @@ const CardSearchPage = () => {
     const handleSearch = useCallback(async () => {
         if (!searchQuery.trim() || !dbReady) return;
         setSearching(true);
+        setSearchError(null);
 
         try {
             const query = searchQuery.trim();
@@ -80,6 +83,8 @@ const CardSearchPage = () => {
             setSearchResults(mappedResults);
         } catch (err) {
             console.error('搜尋失敗:', err);
+            setSearchError(err);
+            setSearchResults([]);
         } finally {
             setSearching(false);
         }
@@ -210,6 +215,9 @@ const CardSearchPage = () => {
                     {dbError}
                 </div>
             )}
+
+            {/* 搜尋 API 錯誤提示 */}
+            <ApiErrorBanner error={searchError} onDismiss={() => setSearchError(null)} />
 
             {/* 搜尋列 */}
             <div className="flex gap-3">
