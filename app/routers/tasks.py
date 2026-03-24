@@ -95,12 +95,78 @@ async def run_process(project_name: str):
 @router.get("/projects/{project_name}/results")
 async def get_results(project_name: str):
     """
-    讀取計算完成的最佳採購方案（plan.json）。
+    讀取計算完成的最佳採購方案（plan.json），並將資料格式轉換為前端期望的結構。
+
+    plan.json 原始格式（calculator_service 輸出）：
+        { "sellers": { "賣家ID": { "items": [...], "items_subtotal": N } },
+          "summary": { "total_items_cost", "total_shipping_cost", "grand_total", "sellers_count" } }
+
+    轉換後回傳給前端的格式：
+        { "total_cost": N, "total_item_cost": N, "total_shipping_cost": N,
+          "plan": [{ "seller": "ID", "subtotal": N, "shipping_cost": N,
+                     "items": [{ "name", "url", "card_name_zh", "price", "buy_count", "card_number" }] }] }
+
     若結果檔案不存在（尚未執行爬蟲/計算），回傳 404。
     """
     try:
-        return storage.get_plan(project_name)
+        raw = storage.get_plan(project_name)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    # --- 格式轉換：將後端結構轉為前端 ResultsPage.jsx 期望的格式 ---
+    summary = raw.get("summary", {})
+    sellers = raw.get("sellers", {})
+
+    # 讀取購物車，取得預設運費用於沒有 shipping_cost 的賣家
+    try:
+        cart_data = storage.get_cart(project_name)
+        default_shipping = cart_data.get("global_settings", {}).get(
+            "default_shipping_cost", 60
+        )
+    except Exception:
+        default_shipping = 60
+
+    # 組裝賣家陣列（前端的 plan[]）
+    plan = []
+    for seller_id, seller_data in sellers.items():
+        # 轉換每個商品的欄位名稱
+        items = []
+        for item in seller_data.get("items", []):
+            product_id = item.get("product_id")
+            items.append({
+                "name": item.get("product_name", ""),
+                # 用 product_id 組合露天商品頁面網址
+                "url": (
+                    f"https://www.ruten.com.tw/item/show?{product_id}"
+                    if product_id
+                    else ""
+                ),
+                "card_name_zh": item.get("search_card_name", ""),
+                "price": item.get("price", 0),
+                "buy_count": item.get("buy_qty", 0),
+                "card_number": "",  # plan.json 目前不含卡號資訊
+                "image_url": item.get("image_url", ""),
+            })
+
+        # 取第一個商品的 shipping_cost 作為該賣家的運費，若無則用預設值
+        seller_shipping = (
+            seller_data["items"][0].get("shipping_cost", default_shipping)
+            if seller_data.get("items")
+            else default_shipping
+        )
+
+        plan.append({
+            "seller": seller_id,
+            "subtotal": seller_data.get("items_subtotal", 0),
+            "shipping_cost": seller_shipping,
+            "items": items,
+        })
+
+    return {
+        "total_cost": summary.get("grand_total", 0),
+        "total_item_cost": summary.get("total_items_cost", 0),
+        "total_shipping_cost": summary.get("total_shipping_cost", 0),
+        "plan": plan,
+    }
