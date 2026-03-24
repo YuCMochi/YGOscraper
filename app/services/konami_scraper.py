@@ -15,6 +15,8 @@ from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from app.config import KONAMI_DB_BASE_URL
+
 # 設定日誌格式，方便追蹤程式執行狀況與錯誤
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ class KonamiScraper:
         Returns:
             str: 網頁 HTML 內容，若失敗則回傳 None
         """
-        url = f"https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid={cid}&request_locale=ja"
+        url = f"{KONAMI_DB_BASE_URL}?ope=2&cid={cid}&request_locale=ja"
         logger.info(f"正在抓取 CID: {cid} - URL: {url}")
 
         try:

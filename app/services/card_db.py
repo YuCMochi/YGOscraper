@@ -18,6 +18,8 @@ import sqlite3
 import urllib.request
 from typing import Optional
 
+from app.config import CARDS_CDB_URL, CID_TABLE_URL, CARD_IMAGE_BASE_URL
+
 
 class CardDatabaseService:
     """
@@ -59,7 +61,7 @@ class CardDatabaseService:
         print("載入 CID 對應表 (cid_table.json) 到記憶體...")
         try:
             req = urllib.request.Request(
-                "https://raw.githubusercontent.com/salix5/heliosphere/master/data/cid_table.json",
+                CID_TABLE_URL,
                 headers={"User-Agent": "Mozilla/5.0"},
             )
             with urllib.request.urlopen(req) as response:
@@ -77,7 +79,7 @@ class CardDatabaseService:
         print("載入卡片資料庫 (cards.cdb) 到記憶體...")
         try:
             req = urllib.request.Request(
-                "https://raw.githubusercontent.com/salix5/cdb/gh-pages/cards.cdb",
+                CARDS_CDB_URL,
                 headers={"User-Agent": "Mozilla/5.0"},
             )
             with urllib.request.urlopen(req) as response:
@@ -155,7 +157,7 @@ class CardDatabaseService:
                     "race": race,
                     "attribute": attr,
                     "desc": desc,
-                    "image_url": f"https://raw.githubusercontent.com/salix5/query-data/gh-pages/pics/{passcode_str}.jpg",
+                    "image_url": f"{CARD_IMAGE_BASE_URL}/{passcode_str}.jpg",
                 }
             )
 

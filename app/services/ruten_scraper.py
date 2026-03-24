@@ -23,12 +23,14 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from app.config import RUTEN_API_BASE_URL, RUTEN_IMAGE_BASE_URL
+
 # 設定日誌
 logger = logging.getLogger(__name__)
 
 # 基本設定
-BASE_URL = "https://rtapi.ruten.com.tw/api"
-IMAGE_BASE_URL = "https://gcs.rimg.com.tw"
+BASE_URL = RUTEN_API_BASE_URL
+IMAGE_BASE_URL = RUTEN_IMAGE_BASE_URL
 DEFAULT_TIMEOUT = 10       # 預設連線超時秒數
 DEFAULT_RETRY_DELAY = 1    # 重試連線前的等待秒數
 MAX_RETRIES = 3            # 最大重試次數
