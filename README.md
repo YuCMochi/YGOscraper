@@ -1,4 +1,4 @@
-# ⚡ YGO Scraper v2.0.0
+# ⚡ YGO Scraper v0.2.0
 
 遊戲王卡片最低價格採購優化工具。從露天拍賣 (Ruten) 自動搜尋、比價，計算出最划算的購買方案。
 
@@ -151,25 +151,18 @@ http://localhost:5173
 
 ```
 YGOscraper/
-├── server.py             # 後端 API 主程式（FastAPI）
-├── scraper.py            # 露天拍賣爬蟲
-├── konami_scraper.py     # Konami 官方資料庫爬蟲（卡號查詢）
-├── caculator.py          # 最低價格計算引擎
-├── clean_csv.py          # 爬蟲資料清理
-├── file_genarator.py     # 檔案產生工具
-├── requirements.txt      # Python 套件清單
+├── server.py             # 後端 API 入口點（FastAPI）~50 行
+├── app/                  # 後端核心模組
+│   ├── config.py         # 外部 URL 統一管理
+│   ├── schemas.py        # Pydantic 資料模型
+│   ├── routers/          # API 路由（projects, cart, cards, tasks）
+│   └── services/         # 服務層（爬蟲、清洗、計算、資料庫）
+├── frontend/             # React 前端應用程式（Vite + Tailwind v4）
 ├── data/                 # 專案資料（購物車 JSON 等）
-├── frontend/             # React 前端應用程式
-│   ├── src/
-│   │   ├── main.jsx      # 前端進入點
-│   │   ├── App.jsx       # 路由設定
-│   │   ├── index.css     # 全域樣式（Tailwind v4）
-│   │   ├── components/   # React 元件
-│   │   └── lib/          # API 工具函式
-│   ├── package.json
-│   └── vite.config.js
-├── _legacy/              # v1.0 舊版程式碼（已棄用）
-└── env/                  # Python 虛擬環境
+├── docs/                 # 開發文件
+├── requirements.txt      # Python 套件清單
+├── _legacy/              # 舊版系統（已棄用）
+└── .venv/                # Python 虛擬環境
 ```
 
 ---
@@ -178,8 +171,9 @@ YGOscraper/
 
 | 版本 | 說明 |
 |------|------|
-| **v2.0.0** | 全面重寫：React 前端 + FastAPI 後端，卡片資料庫改為啟動時載入記憶體 |
-| **v1.0.0** | 舊版 CLI / HTML 版本（已棄用，保留於 `_legacy/` 資料夾） |
+| **v0.2.0** | 後端架構重構完成：Service 模組化、API 路由拆分、Pydantic Schema、外部 URL 集中管理 |
+| **v0.1.0** | React 前端 + FastAPI 後端的初版整合，UI/UX 改版 |
+| **v0.0.x** | 舊版 CLI / HTML 腳本版本（已棄用，保留於 `_legacy/`） |
 
 ---
 
