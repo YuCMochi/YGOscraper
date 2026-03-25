@@ -259,17 +259,14 @@ YGOscraper/
 > - 將各選項拆成獨立的資料列，讓 calculator 能精確計算
 > - 前端顯示時標註屬於哪個選項
 
-#### `per_cart_settings`（專案級設定 vs 全域設定）⚠️ 待決議
+#### `per_cart_settings`（專案級設定 vs 全域設定）✅ 決議：方案 A
 
-> **背景：** 目前 `cart.json` 只有 `global_settings` 一層設定。
-> 但隨著功能增加（結果頁手動排除 → 重新計算），需考慮是否支援「單次/單專案」的覆蓋設定。
+> **決議日期：** 2026-03-25
 >
-> **問題場景：**
-> 使用者在結果頁看到某個商家有問題，想排除它並重新計算。
-> 但如果直接寫進 `global_exclude_seller`，會影響所有未來的專案。
-> 使用者可能只想「這次」排除。
+> **背景：** `cart.json` 原本只有 `global_settings` 一層設定。
+> 為支援「結果頁手動排除商品/商家 → 重新計算」功能，採用兩層設定架構。
 >
-> **方案 A：兩層設定架構**
+> **採用方案 A：兩層設定架構**
 > ```json
 > {
 >   "global_settings": { ... },
@@ -281,13 +278,10 @@ YGOscraper/
 > ```
 > - `cart_settings` 疊加在 `global_settings` 之上（merge，非覆蓋）
 > - 結果頁的「排除」操作寫入 `cart_settings`，不汙染全域
+> - `cleaner_service.py` 讀取時：`effective_exclude = global_exclude + cart_exclude`
 >
-> **方案 B：結果頁臨時篩選**
-> - 不改 `cart.json` 結構
-> - 結果頁的排除操作只在該次 API 請求中生效（作為 query parameter 傳入）
-> - 不持久化
->
-> **目前傾向：** 待討論。方案 A 更完整但改動較大，方案 B 較簡單但重新計算後參數會遺失。
+> **實作時程：** v0.4.0（搭配結果頁手動微調功能）
+> **v0.3.0 先做：** `global_settings` 的前端管理 UI
 
 #### 已挖掘的露天 API 參考表
 
