@@ -11,11 +11,15 @@ app/services/storage.py - 專案資料的統一讀寫管理
 import os
 import json
 import copy  # 用於 deepcopy，確保預設結構每次回傳獨立的物件
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # 常數設定
 # ============================================================
 DATA_DIR = "data"
+GLOBAL_SETTINGS_PATH = os.path.join(DATA_DIR, "global_settings.json")
 
 # 預設的空白購物車結構
 _DEFAULT_CART = {
@@ -27,6 +31,56 @@ _DEFAULT_CART = {
         "global_exclude_seller": [],
     },
 }
+
+# global_settings 的預設值（獨立常數，方便引用）
+_DEFAULT_GLOBAL_SETTINGS = _DEFAULT_CART["global_settings"]
+
+
+# ============================================================
+# 全域設定讀寫（獨立於專案的 data/global_settings.json）
+# ============================================================
+
+def get_global_settings() -> dict:
+    """
+    讀取全域設定（data/global_settings.json）。
+    若檔案不存在，回傳預設值。
+
+    Returns:
+        全域設定的 dict
+    """
+    if not os.path.exists(GLOBAL_SETTINGS_PATH):
+        logger.info("全域設定檔不存在，回傳預設值")
+        return copy.deepcopy(_DEFAULT_GLOBAL_SETTINGS)
+
+    try:
+        with open(GLOBAL_SETTINGS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        # 確保所有欄位存在（向下兼容）
+        defaults = copy.deepcopy(_DEFAULT_GLOBAL_SETTINGS)
+        defaults.update(data)
+        return defaults
+    except (json.JSONDecodeError, IOError) as e:
+        logger.warning(f"讀取全域設定失敗，使用預設值: {e}")
+        return copy.deepcopy(_DEFAULT_GLOBAL_SETTINGS)
+
+
+def save_global_settings(settings: dict) -> None:
+    """
+    將全域設定儲存至 data/global_settings.json。
+
+    Args:
+        settings: 全域設定的 dict
+    Raises:
+        RuntimeError: 寫入失敗時
+    """
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+    try:
+        with open(GLOBAL_SETTINGS_PATH, "w", encoding="utf-8") as f:
+            json.dump(settings, f, ensure_ascii=False, indent=4)
+        logger.info("已儲存全域設定")
+    except IOError as e:
+        raise RuntimeError(f"儲存全域設定失敗: {e}") from e
 
 
 def _get_project_dir(project_name: str) -> str:
