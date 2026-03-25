@@ -5,13 +5,17 @@ app/services/project_service.py - 專案建立服務
 這個檔案是原本 `file_genarator.py` 的重構版本：
 - 修正拼字錯誤 (genarator → generator)
 - 改用 app/services/storage.py 管理預設結構，避免重複定義
+- v0.3.0: 新建專案時從 data/global_settings.json 讀取全域設定
 """
 import os
 import datetime
 import shutil
 
-from app.services.storage import DATA_DIR, _DEFAULT_CART
+from app.services.storage import (
+    DATA_DIR, _DEFAULT_CART, get_global_settings
+)
 import json
+import copy
 
 
 class ProjectService:
@@ -36,8 +40,9 @@ class ProjectService:
         建立一個以「現在時間」命名的新專案資料夾，
         並初始化一份空白的購物車設定檔（cart.json）。
 
-        若 data/cart.json 存在（模板），會複製一份過去；
-        否則建立全新的空白購物車。
+        新專案的 global_settings 會從 data/global_settings.json 讀取，
+        確保使用者在側邊欄調整的全域設定能套用到新專案。
+        若 data/cart.json 存在（模板），則優先複製模板。
 
         Returns:
             新建立的專案資料夾的絕對路徑
@@ -56,9 +61,11 @@ class ProjectService:
             shutil.copy(template_cart_path, target_cart_path)
             print(f"已從模板複製購物車到: {target_cart_path}")
         else:
-            # 否則建立空白購物車
+            # 建立空白購物車，但使用全域設定檔的值作為 global_settings
+            cart = copy.deepcopy(_DEFAULT_CART)
+            cart["global_settings"] = get_global_settings()
             with open(target_cart_path, "w", encoding="utf-8") as f:
-                json.dump(_DEFAULT_CART, f, ensure_ascii=False, indent=4)
-            print(f"已建立空白購物車: {target_cart_path}")
+                json.dump(cart, f, ensure_ascii=False, indent=4)
+            print(f"已建立空白購物車（套用全域設定）: {target_cart_path}")
 
         return os.path.abspath(project_path)

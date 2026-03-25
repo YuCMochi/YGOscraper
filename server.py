@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 # ============================================================
 app = FastAPI(
     title="YGOscraper API",
-    version="0.2.0",
+    version="0.3.0",
     description="遊戲王卡片採購最佳化工具的後端 API",
     lifespan=lifespan,
 )
@@ -79,12 +79,14 @@ app.add_middleware(
 # ============================================================
 # 掛載 API 路由模組
 # ============================================================
-from app.routers import projects, cart, cards, tasks  # noqa: E402
+from app.routers import projects, cart, cards, tasks, health, settings  # noqa: E402
 
 app.include_router(projects.router)
 app.include_router(cart.router)
 app.include_router(cards.router)
 app.include_router(tasks.router)
+app.include_router(health.router)
+app.include_router(settings.router)
 
 # ============================================================
 # 本地開發啟動入口
