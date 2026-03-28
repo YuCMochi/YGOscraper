@@ -1,4 +1,4 @@
-# ⚡ YGO Scraper v0.2.0
+# ⚡ YGO Scraper v0.3.0
 
 遊戲王卡片最低價格採購優化工具。從露天拍賣 (Ruten) 自動搜尋、比價，計算出最划算的購買方案。
 
@@ -8,11 +8,11 @@
 
 | 層級 | 技術 | 說明 |
 |------|------|------|
-| **前端** | React + Vite + Tailwind CSS v4 | 使用者介面，提供搜尋卡片、管理購物車等功能 |
-| **後端** | FastAPI (Python) | API 伺服器，負責資料查詢、爬蟲與價格計算 |
+| **前端** | React + Vite + Tailwind CSS v4 | 使用者介面，提供搜尋卡片、管理購物車、全域設定管理等功能 |
+| **後端** | FastAPI (Python) | API 伺服器，負責資料查詢、爬蟲、價格計算與設定管理 |
 | **卡片資料庫** | SQLite (`cards.cdb`) | 啟動時自動從 GitHub 下載，載入記憶體供高速查詢 |
 | **CID 對照表** | JSON (`cid_table.json`) | 卡片密碼 ↔ Konami CID 的對照表，啟動時自動下載 |
-| **爬蟲** | Python (`scraper.py`, `konami_scraper.py`) | 分別負責露天拍賣比價與 Konami 官方卡號爬取 |
+| **爬蟲** | Python (`ruten_scraper.py`, `konami_scraper.py`) | 分別負責露天拍賣比價與 Konami 官方卡號爬取 |
 
 ---
 
@@ -30,14 +30,14 @@
 
 ```bash
 # 進入專案根目錄
-cd /Users/Mochi/Documents/Development/YGOscraper
+cd /Users/Mochi/Development/YGOscraper
 
 # 建立 Python 虛擬環境（只需做一次）
-python -m venv env
+python -m venv .venv
 
 # 啟動虛擬環境
-source env/bin/activate        # macOS / Linux
-# env\Scripts\activate         # Windows
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
 
 # 安裝所有 Python 套件
 pip install -r requirements.txt
@@ -79,8 +79,9 @@ uvicorn server:app --reload
 成功的話，你會看到類似這樣的訊息：
 ```
 INFO:     Uvicorn running on http://127.0.0.1:8000
-INFO:     ✅ cards.cdb 已成功載入記憶體
-INFO:     ✅ cid_table.json 已成功載入
+成功載入 cards.cdb 到記憶體。
+成功載入 13939 筆 CID 對應資料。
+INFO:     Application startup complete.
 ```
 
 > 後端伺服器**啟動時會自動從 GitHub 下載**最新版的 `cards.cdb` 和 `cid_table.json`，不需要手動下載任何檔案。
@@ -145,6 +146,11 @@ http://localhost:5173
 ### 5. 查看結果
 - 計算完成後會顯示最佳採購方案（最低總價含運費）
 
+### 6. 管理全域設定（v0.3.0 新功能）
+- 點左側欄的「**全域設定**」展開設定面板
+- 可調整：預設運費、每家最低消費、排除關鍵字、封鎖賣家 ID
+- 這些設定會套用到**之後新建的所有專案**
+
 ---
 
 ## 📁 專案目錄結構
@@ -155,10 +161,21 @@ YGOscraper/
 ├── app/                  # 後端核心模組
 │   ├── config.py         # 外部 URL 統一管理
 │   ├── schemas.py        # Pydantic 資料模型
-│   ├── routers/          # API 路由（projects, cart, cards, tasks）
+│   ├── routers/          # API 路由
+│   │   ├── projects.py   # 專案 CRUD
+│   │   ├── cart.py       # 購物車讀寫
+│   │   ├── cards.py      # 卡片搜尋 + CID
+│   │   ├── tasks.py      # 爬蟲/計算任務
+│   │   ├── health.py     # 外部依賴健康檢查
+│   │   └── settings.py   # 全域設定 CRUD
 │   └── services/         # 服務層（爬蟲、清洗、計算、資料庫）
 ├── frontend/             # React 前端應用程式（Vite + Tailwind v4）
-├── data/                 # 專案資料（購物車 JSON 等）
+│   └── src/components/
+│       ├── GlobalSettingsPanel.jsx  # 全域設定面板
+│       ├── DependencyStatus.jsx    # 外部服務狀態指示器
+│       └── ...
+├── data/
+│   └── global_settings.json  # 全域設定（跨專案共用）
 ├── docs/                 # 開發文件
 ├── requirements.txt      # Python 套件清單
 ├── _legacy/              # 舊版系統（已棄用）
@@ -167,10 +184,29 @@ YGOscraper/
 
 ---
 
+## 🌐 API 端點一覽
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| GET | `/api/projects` | 列出所有專案 |
+| POST | `/api/projects` | 新建專案 |
+| GET | `/api/cart/{project}` | 讀取購物車 |
+| PUT | `/api/cart/{project}` | 更新購物車 |
+| GET | `/api/cards/search?q=...` | 搜尋卡片 |
+| POST | `/api/tasks/{project}/scrape` | 執行爬蟲 |
+| GET | `/api/tasks/{project}/results` | 讀取計算結果 |
+| GET | `/api/settings` | 讀取全域設定 |
+| PUT | `/api/settings` | 更新全域設定 |
+| GET | `/api/health/dependencies` | 檢查外部服務狀態 |
+
+---
+
 ## 📌 版本歷史
 
 | 版本 | 說明 |
 |------|------|
+| **v0.3.0** | 全域設定 UI 面板、獨立 `global_settings.json`、外部依賴健康檢查、版本號同步 |
+| **v0.2.1** | ResultsPage 白畫面修復、API 錯誤處理（ApiErrorBanner）、前端架構梳理完成 |
 | **v0.2.0** | 後端架構重構完成：Service 模組化、API 路由拆分、Pydantic Schema、外部 URL 集中管理 |
 | **v0.1.0** | React 前端 + FastAPI 後端的初版整合，UI/UX 改版 |
 | **v0.0.x** | 舊版 CLI / HTML 腳本版本（已棄用，保留於 `_legacy/`） |
@@ -180,10 +216,22 @@ YGOscraper/
 ## ⚠️ 常見問題
 
 ### `EPERM: operation not permitted` 錯誤
-如果在執行 `npm run dev` 或其他指令時遇到此錯誤，這是 macOS 的權限問題。請在終端機執行：
+如果在執行 `npm install` 或 `npm run dev` 時遇到此錯誤，這是 macOS 的 `com.apple.provenance` 延伸屬性問題。請依序嘗試：
+
 ```bash
-chmod -R 755 /Users/Mochi/Documents/Development/YGOscraper/frontend/node_modules
+# 方法 1：清除延伸屬性
+xattr -cr frontend/node_modules
+
+# 方法 2：重建 node_modules
+rm -rf frontend/node_modules
+npm install --prefix frontend
+
+# 方法 3：若 npm cache 被 root 佔用
+sudo chown -R $(whoami):staff ~/.npm
 ```
 
 ### 後端啟動時卡住或下載失敗
 後端需要在啟動時從 GitHub 下載 `cards.cdb`（約 6MB）和 `cid_table.json`。請確保網路暢通。
+
+### Git 操作出現 `Operation not permitted`
+macOS 的 `com.apple.provenance` 屬性可能導致 Git 無法存取某些檔案。執行 `xattr -cr .` 可批量清除。
