@@ -1,63 +1,8 @@
-# YGOscraper 2.0 開發計畫與進度追蹤
+# YGOscraper 開發計畫與進度追蹤
 
-> **最後更新**：2026-03-23
+> **最後更新**：2026-03-28
 > **用途**：這份文件是 AI 助手和開發者共用的「活文件」，紀錄整體開發目標、進度、和備忘事項。
 > 每次對話都可以更新此文件。
-
----
-
-## 📋 重構進度總覽（Task Checklist）
-
-### 階段一：穩定現況 ✅
-- [x] 將目前所有變更 Commit 存檔 (WIP 狀態)
-- [x] 建立待辦清單追蹤後續進度
-
-### 階段二：Pydantic Schema 修復 ✅
-> 此階段優先於 API 拆分，因為它是目前 Bug 的主要來源。
-- [x] 修正 `CartItem` Model：前端傳送的額外欄位 (`passcode`, `cid`, `type` 等) 需要被接受
-- [x] 將所有 Models 搬入 `app/schemas.py`，定義完整的 `CartItemCreate`, `CartItemFull`, `CardNumber` 等結構
-
-### 階段三：API 路由拆分（後端重構）✅
-- [x] 建立 `app/routers/` 目錄，將 API 依功能分檔：
-  - [x] `projects.py`：專案 CRUD
-  - [x] `cart.py`：購物車讀寫
-  - [x] `cards.py`：卡片搜尋 + CID 爬取
-  - [x] `tasks.py`：執行爬蟲/計算流程 + 結果讀取
-- [x] 重整 `server.py` 為純啟動入口 (只保留 `lifespan`, CORS, `include_router`)
-
-### 階段四：資料存取層封裝 ✅
-- [x] 建立 `app/services/storage.py` (`ProjectStorage` 類別)，統一管理 `cart.json` / `plan.json` 的讀寫
-- [x] 收編 `file_genarator.py` → `app/services/project_service.py` (修正拼寫 genarator→generator)
-- [x] 為未來自建 DB 預留介面：定義 `CardDatabaseService` 抽象層
-
-### 階段五：腳本模組化（淘汰 subprocess）✅
-- [x] `clean_csv.py` → `app/services/cleaner_service.py` (封裝為 `DataCleaner` 類別)
-- [x] `caculator.py` → `app/services/calculator_service.py` (封裝為 `PurchaseOptimizer` 類別)
-- [x] 移動 `scraper.py`, `konami_scraper.py` 到 `app/services/` 下
-- [x] 修改 `tasks.py` router：用 `import` 取代 `subprocess.run()`
-- [x] 修復 `cards.py` 的反向依賴（`import server` → `app.state` 注入）
-
-### 階段六：前端架構梳理 ✅
-- [x] 抽取 `CardSearchPage.jsx` 中的常數 (卡片類型/屬性/種族對應表) 到 `src/constants/cardTypes.js`
-- [x] 確認 API 錯誤處理是否完善 (如網路斷線、後端 500)
-- [x] 消除 `ProjectDetail.jsx` 中重複定義的 `attrNames` / `raceNames`
-
----
-
-## 🐛 已知 Bug 清單
-
-- [x] 🔴 **[Critical]** `CartItem` Pydantic model 與前端實際傳送的資料不匹配 → 已在 Phase 0 (schemas.py) 修復
-- [x] 🟡 `target_card_numbers` 欄位定義：已改為 `List[Union[CardNumberInfo, str]]` 兼容兩種格式
-- [ ] 🟡 `data/cart.json` 和 `frontend/package.json` 有 Git 權限問題 (`Operation not permitted`)
-- [x] 🟢 `file_genarator.py` 拼寫錯誤：已建立 `app/services/project_service.py` 替代
-- [x] 🟢 `storage.py` 淺拷貝 Bug：已改用 `copy.deepcopy()`
-- [x] 🔴 **[Critical]** `ResultsPage.jsx` 結果頁白畫面：前後端資料結構不匹配 → 已在 `tasks.py` 的 `get_results` 中做格式轉換修復
-  - **後端** `calculator_service.py` 輸出的 `plan.json` 格式：`{ sellers: { 賣家ID: {items, items_subtotal} }, summary: {total_items_cost, total_shipping_cost, grand_total} }`
-  - **前端** `ResultsPage.jsx` 期望的格式：`{ total_cost, total_item_cost, total_shipping_cost, missing_cards, plan: [{seller, subtotal, shipping_cost, items: [{name, url, card_name_zh, price, buy_count, card_number}]}] }`
-  - 存取 `results.plan.length` 時因 `results.plan` 為 `undefined` 而拋出 `TypeError`，導致整個頁面 Crash 變成白畫面
-  - 修復方向：在 API 回傳層（`tasks.py` 的 `get_results`）或前端 `ResultsPage.jsx` 中做格式轉換，使兩端一致
-
----
 
 ## 🏗️ 目標檔案結構
 
@@ -68,17 +13,20 @@ YGOscraper/
 ├── server.py                    # 入口 (~50行)
 ├── app/
 │   ├── __init__.py
+│   ├── config.py                # 外部 URL 統一管理
 │   ├── schemas.py               # Pydantic models
 │   ├── routers/
 │   │   ├── __init__.py
 │   │   ├── projects.py
 │   │   ├── cart.py
 │   │   ├── cards.py
-│   │   └── tasks.py
+│   │   ├── tasks.py
+│   │   ├── health.py            # v0.3.0 外部依賴健康檢查
+│   │   └── settings.py          # v0.3.0 全域設定 CRUD
 │   └── services/
 │       ├── __init__.py
 │       ├── card_db.py           # 卡片資料庫服務 (預留自建DB替換)
-│       ├── storage.py           # 專案檔案讀寫管理
+│       ├── storage.py           # 專案檔案讀寫 + 全域設定管理
 │       ├── ruten_scraper.py     # 露天爬蟲
 │       ├── konami_scraper.py    # Konami 爬蟲
 │       ├── cleaner_service.py   # 資料清洗
@@ -86,13 +34,26 @@ YGOscraper/
 │       └── project_service.py   # 專案建立管理
 ├── frontend/                    # React 前端
 ├── docs/                        # 開發文件（本文件所在處）
-├── data/                        # 專案資料
+├── data/
+│   └── global_settings.json     # v0.3.0 全域設定（獨立於專案）
 └── _legacy/                     # 舊版系統
 ```
 
 ---
 
 ## 📝 開發備忘錄
+
+### 2026-03-27
+- v0.3.0 核心功能開發完成：全域設定 UI 面板 + 外部依賴健康檢查
+- 後端：`storage.py` 新增 `get_global_settings` / `save_global_settings`，全域設定獨立為 `data/global_settings.json`
+- 後端：新增 `app/routers/health.py`（GET /api/health/dependencies，httpx 並行 HEAD 請求）
+- 後端：新增 `app/routers/settings.py`（GET/PUT /api/settings）
+- 後端：`project_service.py` 新專案自動繼承 `global_settings.json` 的設定
+- 前端：新增 `GlobalSettingsPanel.jsx`（運費/低消/排除關鍵字/封鎖賣家 Tag 輸入）
+- 前端：新增 `DependencyStatus.jsx`（側邊欄底部小圓點 + 可展開詳細列表）
+- 前端：`Layout.jsx` 整合以上元件，版本號更新至 v0.3.0
+- 瀏覽器驗證通過，所有 API 端點正常回應
+- 已知：salix5 卡圖（400）和露天 API（403）的健康檢查 URL 需要調整（不影響實際功能）
 
 ### 2026-03-25
 - 比對 Notion 筆記與專案進度，整理出 13 項未實現點子並進行優先度分析
@@ -137,23 +98,25 @@ YGOscraper/
 |------|------|------|------|
 | **v0.2.0** | ✅ 完成 | 後端架構重構 | Service 模組化、API 路由拆分、Pydantic Schema、外部 URL 集中管理 |
 | **v0.2.1** | ✅ 完成 | Bug 修復 + 前端小改善 | ResultsPage 白畫面修復、API 錯誤處理（ApiErrorBanner）、階段六完成 |
-| **v0.3.0** | ⬜ 計畫中 | 前端強化 + 全域設定 | 見下方詳細清單 |
+| **v0.3.0** | 🔧 進行中 | 前端強化 + 全域設定 | 核心完成（設定 UI + 健康檢查），剩餘項目見下方 |
 | **v0.4.0** | 💡 構想中 | 爬蟲升級（items/v2 API） | 見下方詳細清單 |
 | **v0.5.0** | 💡 構想中 | Neuron 牌組導入 | 見下方詳細清單 |
 | **v0.6.0** | 💡 構想中 | 使用者體驗 + UI 改善 | 見下方詳細清單 |
 | **v1.0.0** | 🎯 目標 | 正式版 | 功能穩定、文件齊全、可供他人使用與部署 |
 
-### v0.3.0 — 前端強化 + 全域設定 ⬜
+### v0.3.0 — 前端強化 + 全域設定 🔧
 
 > 主題：讓使用者透過前端 UI 管理後端已支援的 `global_settings` 參數，加上穩定性改善。
 
-- [ ] **全域設定 UI（側邊欄）**：在左側欄建立「Global Settings」面板，讓使用者管理：
-  - [ ] 預設運費 (`default_shipping_cost`，目前預設 60 元)
-  - [ ] 每家最低消費門檻 (`min_purchase_limit`，目前預設 0 = 不限制)
-  - [ ] 排除關鍵字清單 (`global_exclude_keywords`，如「卡套」「牌套」)
-  - [ ] 封鎖賣家清單 (`global_exclude_seller`，輸入賣家 ID)
+- [x] **全域設定 UI（側邊欄）**：在左側欄建立「全域設定」面板，讓使用者管理：
+  - [x] 預設運費 (`default_shipping_cost`，目前預設 60 元)
+  - [x] 每家最低消費門檻 (`min_purchase_limit`，目前預設 0 = 不限制)
+  - [x] 排除關鍵字清單 (`global_exclude_keywords`，如「卡套」「牌套」)
+  - [x] 封鎖賣家清單 (`global_exclude_seller`，輸入賣家 ID)
   > ⚠️ 不預設內建任何黑名單資料，僅提供使用者自行設定的介面（避免法律風險）
-- [ ] **依賴 URL 驗證機制**：啟動時自動檢查 `config.py` 中的外部 URL（露天 API、Konami DB、salix5 等）是否可達，異常時在前端顯示 Warning
+- [x] **全域設定獨立儲存**：從 `cart.json` 抽出為 `data/global_settings.json`，新專案自動繼承
+- [x] **依賴 URL 驗證機制**：頁面載入時自動檢查 `config.py` 中的外部 URL 是否可達，側邊欄底部顯示綠/黃指示燈
+  > ⚠️ 已知問題：卡圖（400）和露天 API（403）的 HEAD 請求回傳非 2xx，需調整檢查 URL 或判定邏輯
 - [ ] Loading 狀態改善
 - [ ] 斷線重連提示
 - [ ] 爬蟲進度即時顯示
