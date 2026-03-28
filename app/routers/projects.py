@@ -41,3 +41,17 @@ async def create_project():
         return {"path": new_path, "name": os.path.basename(new_path)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/projects/{project_id}")
+async def delete_project(project_id: str):
+    """
+    軟刪除專案：將專案資料夾移到 _legacy/trash/（可手動恢復）。
+    """
+    try:
+        storage.delete_project(project_id)
+        return {"message": f"專案 '{project_id}' 已刪除"}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

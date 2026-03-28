@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
-import { FolderPlus, FolderOpen, Loader2 } from 'lucide-react';
+import { FolderPlus, FolderOpen, Loader2, Trash2 } from 'lucide-react';
 import ApiErrorBanner from './ApiErrorBanner';
 
 const ProjectList = () => {
@@ -33,6 +33,17 @@ const ProjectList = () => {
             setError(err);
         } finally {
             setCreating(false);
+        }
+    }
+
+    const handleDeleteProject = async (projectId) => {
+        if (!window.confirm(`確定要刪除專案「${projectId}」嗎？\n（會移至垃圾桶，可手動恢復）`)) return;
+        try {
+            await api.delete(`/projects/${projectId}`);
+            await fetchProjects();
+        } catch (err) {
+            console.error('刪除專案失敗', err);
+            setError(err);
         }
     }
 
@@ -85,8 +96,23 @@ const ProjectList = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map((project) => (
-                        <Link to={`/project/${project.id}`} key={project.id} className="bg-surface border border-slate-700 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer group block">
+                        <Link to={`/project/${project.id}`} key={project.id} className="bg-surface border border-slate-700 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer group relative block">
                             <div className="flex justify-between items-start mb-4">
+                                {/* Hover 刪除按鈕 */}
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDeleteProject(project.id);
+                                    }}
+                                    className="absolute top-3 right-3 p-1.5 rounded-lg
+                                            opacity-0 group-hover:opacity-100
+                                            bg-slate-800/90 text-slate-400 hover:bg-danger/20 hover:text-danger
+                                            transition-all z-10 backdrop-blur-sm border border-slate-700/50"
+                                    title="刪除專案"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
                                 <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400 group-hover:bg-blue-500/20 transition-colors">
                                     <FolderOpen size={24} />
                                 </div>

@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Settings, ChevronDown, ChevronUp } from 'lucide-react';
-import GlobalSettingsPanel from './GlobalSettingsPanel';
+import { LayoutDashboard, Settings } from 'lucide-react';
+import GlobalSettingsModal from './GlobalSettingsModal';
 import DependencyStatus from './DependencyStatus';
 
 /**
  * Layout - 主版面配置
  * ====================
- * 包含左側欄（導航 + 全域設定 + 服務狀態）和主要內容區。
- * v0.3.0: 新增「全域設定」展開面板和底部「服務狀態」指示器。
+ * 包含左側欄（導航 + 服務狀態）和主要內容區。
+ * v0.3.0: 全域設定從側邊欄移至右上角 Modal。
  */
 const Layout = ({ children }) => {
-    // 控制全域設定面板的展開/收合
     const [settingsOpen, setSettingsOpen] = useState(false);
 
     return (
@@ -27,28 +26,6 @@ const Layout = ({ children }) => {
                 {/* 導航區 */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                     <NavItem icon={<LayoutDashboard size={20} />} label="專案列表" active />
-
-                    {/* 全域設定（展開/收合） */}
-                    <div
-                        onClick={() => setSettingsOpen(!settingsOpen)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-colors ${
-                            settingsOpen
-                                ? 'bg-primary/20 text-primary border border-primary/20'
-                                : 'text-text-muted hover:bg-slate-700/50 hover:text-white'
-                        }`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <Settings size={20} />
-                            <span className="font-medium">全域設定</span>
-                        </div>
-                        {settingsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </div>
-
-                    {/* 全域設定面板 */}
-                    <GlobalSettingsPanel
-                        isOpen={settingsOpen}
-                        onToggle={() => setSettingsOpen(!settingsOpen)}
-                    />
                 </nav>
 
                 {/* 底部：服務狀態 + 版本號 */}
@@ -63,13 +40,26 @@ const Layout = ({ children }) => {
                 <header className="h-16 bg-surface border-b border-slate-700 flex items-center justify-between px-8">
                     <h2 className="text-lg font-medium">控制台</h2>
                     <div className="flex gap-4">
-                        {/* Placeholder for future header items */}
+                        {/* 全域設定按鈕 */}
+                        <button
+                            onClick={() => setSettingsOpen(true)}
+                            className="p-2 rounded-lg text-text-muted hover:text-white hover:bg-slate-700 transition-colors"
+                            title="全域設定"
+                        >
+                            <Settings size={20} />
+                        </button>
                     </div>
                 </header>
                 <div className="p-8">
                     {children}
                 </div>
             </main>
+
+            {/* 全域設定 Modal */}
+            <GlobalSettingsModal
+                isOpen={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+            />
         </div>
     );
 };

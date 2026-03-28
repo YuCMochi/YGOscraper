@@ -220,3 +220,35 @@ def list_projects() -> list[dict]:
     # 依 ID（時間戳）降序排列，最新的排最前面
     projects.sort(key=lambda x: x["id"], reverse=True)
     return projects
+
+
+# ============================================================
+# 專案刪除（軟刪除 → _legacy/trash/）
+# ============================================================
+
+def delete_project(project_name: str) -> None:
+    """
+    軟刪除專案：將專案資料夾移到 _legacy/trash/ 下（可手動恢復）。
+
+    Args:
+        project_name: 專案名稱
+    Raises:
+        FileNotFoundError: 專案不存在時
+    """
+    import shutil
+    import datetime as dt
+
+    project_path = _get_project_dir(project_name)
+    if not os.path.exists(project_path):
+        raise FileNotFoundError(f"專案 '{project_name}' 不存在")
+
+    trash_dir = os.path.join("_legacy", "trash")
+    os.makedirs(trash_dir, exist_ok=True)
+
+    dest = os.path.join(trash_dir, project_name)
+    if os.path.exists(dest):
+        suffix = dt.datetime.now().strftime("%H%M%S")
+        dest = f"{dest}_{suffix}"
+
+    shutil.move(project_path, dest)
+    logger.info(f"已將專案 '{project_name}' 移至 {dest}")

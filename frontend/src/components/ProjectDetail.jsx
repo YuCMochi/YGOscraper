@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2, ShoppingCart, BarChart3 } from 'lucide-react';
 import ApiErrorBanner from './ApiErrorBanner';
 import { attrNames, raceNames } from '../constants/cardTypes';
 
@@ -15,6 +15,9 @@ const ProjectDetail = () => {
     const [results, setResults] = useState(null);
     const [error, setError] = useState(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [hasResults, setHasResults] = useState(false);
+    const [shippingStr, setShippingStr] = useState('60');
+    const [minPurchaseStr, setMinPurchaseStr] = useState('0');
 
     // 取得購物車資料
     useEffect(() => {
@@ -22,6 +25,8 @@ const ProjectDetail = () => {
             try {
                 const res = await api.get(`/projects/${projectId}/cart`);
                 setCart(res.data);
+                setShippingStr(String(res.data.global_settings?.default_shipping_cost ?? 60));
+                setMinPurchaseStr(String(res.data.global_settings?.min_purchase_limit ?? 0));
             } catch (error) {
                 console.error("取得購物車失敗", error);
             } finally {
@@ -29,6 +34,10 @@ const ProjectDetail = () => {
             }
         };
         fetchCart();
+        // 檢查是否有已計算的結果
+        api.get(`/projects/${projectId}/results`)
+            .then(() => setHasResults(true))
+            .catch(() => setHasResults(false));
     }, [projectId]);
 
     // 儲存購物車
@@ -147,6 +156,19 @@ const ProjectDetail = () => {
                     >
                         {running ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
                         執行爬蟲
+                    </button>
+                    <button
+                        onClick={() => navigate(`/project/${projectId}/results`)}
+                        disabled={!hasResults}
+                        className={`flex items-center gap-2 px-4 py-2 rounded font-medium transition-all ${
+                            hasResults
+                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                        title={hasResults ? '查看計算結果' : '尚未執行過爬蟲'}
+                    >
+                        <BarChart3 size={18} />
+                        查看結果
                     </button>
                 </div>
             </div>
@@ -347,30 +369,83 @@ const ProjectDetail = () => {
                     )}
                 </div>
 
-                {/* 右欄：設定與結果 */}
+                {/* 右欄：設定 */}
                 <div className="space-y-6">
 
-                    {/* 全域設定面板 */}
+                    {/* 專案設定面板 */}
                     <div className="bg-surface border border-slate-700 rounded-lg p-5">
-                        <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">全域設定</h3>
+                        <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-1">專案設定</h3>
+                        <p className="text-xs text-slate-500 mb-4">⚠️ 目前讀寫全域設定，v0.4.0 將實作獨立專案設定</p>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-sm block mb-1">預設運費</label>
-                                <input
-                                    type="number"
-                                    value={cart.global_settings.default_shipping_cost || 60}
-                                    onChange={(e) => setCart({ ...cart, global_settings: { ...cart.global_settings, default_shipping_cost: parseInt(e.target.value) } })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm"
-                                />
+                                <label className="text-sm block mb-2">🚚 預設運費</label>
+                                <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-9">
+                                    <button
+                                        className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
+                                        onClick={() => {
+                                            const v = Math.max(0, (parseInt(shippingStr) || 0) - 10);
+                                            setShippingStr(String(v));
+                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, default_shipping_cost: v } }));
+                                        }}
+                                    >−</button>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={shippingStr}
+                                        onChange={(e) => {
+                                            if (e.target.value === '' || /^\d+$/.test(e.target.value)) setShippingStr(e.target.value);
+                                        }}
+                                        onBlur={() => {
+                                            const n = parseInt(shippingStr) || 0;
+                                            setShippingStr(String(n));
+                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, default_shipping_cost: n } }));
+                                        }}
+                                        className="flex-1 text-center font-bold text-sm text-white bg-transparent outline-none"
+                                    />
+                                    <button
+                                        className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
+                                        onClick={() => {
+                                            const v = (parseInt(shippingStr) || 0) + 10;
+                                            setShippingStr(String(v));
+                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, default_shipping_cost: v } }));
+                                        }}
+                                    >+</button>
+                                </div>
                             </div>
                             <div>
-                                <label className="text-sm block mb-1">最低消費門檻</label>
-                                <input
-                                    type="number"
-                                    value={cart.global_settings.min_purchase_limit || 100}
-                                    onChange={(e) => setCart({ ...cart, global_settings: { ...cart.global_settings, min_purchase_limit: parseInt(e.target.value) } })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm"
-                                />
+                                <label className="text-sm block mb-2">💰 最低消費門檻</label>
+                                <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-9">
+                                    <button
+                                        className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
+                                        onClick={() => {
+                                            const v = Math.max(0, (parseInt(minPurchaseStr) || 0) - 10);
+                                            setMinPurchaseStr(String(v));
+                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, min_purchase_limit: v } }));
+                                        }}
+                                    >−</button>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={minPurchaseStr}
+                                        onChange={(e) => {
+                                            if (e.target.value === '' || /^\d+$/.test(e.target.value)) setMinPurchaseStr(e.target.value);
+                                        }}
+                                        onBlur={() => {
+                                            const n = parseInt(minPurchaseStr) || 0;
+                                            setMinPurchaseStr(String(n));
+                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, min_purchase_limit: n } }));
+                                        }}
+                                        className="flex-1 text-center font-bold text-sm text-white bg-transparent outline-none"
+                                    />
+                                    <button
+                                        className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
+                                        onClick={() => {
+                                            const v = (parseInt(minPurchaseStr) || 0) + 10;
+                                            setMinPurchaseStr(String(v));
+                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, min_purchase_limit: v } }));
+                                        }}
+                                    >+</button>
+                                </div>
                             </div>
                         </div>
                     </div>
