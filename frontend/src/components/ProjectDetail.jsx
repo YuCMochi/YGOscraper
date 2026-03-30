@@ -4,7 +4,7 @@ import api from '../lib/api';
 import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2, ShoppingCart, BarChart3 } from 'lucide-react';
 import ApiErrorBanner from './ApiErrorBanner';
 import { attrNames, raceNames } from '../constants/cardTypes';
-import { getRarityInfo, getRarityStyle, getRarityDisplay } from '../constants/rarityTypes';
+import { getRarityInfo, getRarityStyle } from '../constants/rarityTypes';
 
 const ProjectDetail = () => {
     const { projectId } = useParams();
@@ -312,16 +312,20 @@ const ProjectDetail = () => {
                                                     // 用 rid 查表取得稀有度樣式
                                                     const rarityStyle = getRarityStyle(rarityId);
                                                     const rarityInfo = getRarityInfo(rarityId);
-                                                    const tooltipText = isString
-                                                        ? '手動指定卡號'
-                                                        : `${cardObj.pack_name} — ${getRarityDisplay(rarityId)}`;
+                                                    // tooltip 三行內容
+                                                    const tooltipLines = isString
+                                                        ? ['手動指定卡號']
+                                                        : [
+                                                            rarityInfo.zh,
+                                                            rarityInfo.full,
+                                                            cardObj.pack_name,
+                                                          ];
 
                                                     return (
                                                         <div
                                                             key={idIdx}
-                                                            className="group/tag flex items-center text-xs px-2 py-1 rounded border transition-colors cursor-default"
+                                                            className="relative group/tag flex items-center text-xs px-2 py-1 rounded border transition-colors cursor-default"
                                                             style={rarityStyle}
-                                                            title={tooltipText}
                                                         >
                                                             <span className="font-mono">{displayNum}</span>
                                                             {rarityId && (
@@ -331,6 +335,22 @@ const ProjectDetail = () => {
                                                                 onClick={(e) => { e.stopPropagation(); removeCardId(idx, idIdx); }}
                                                                 className="ml-1.5 -mr-0.5 opacity-50 hover:opacity-100 hover:text-danger focus:outline-none transition-opacity"
                                                             >×</button>
+                                                            {/* 自訂 tooltip */}
+                                                            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                                                                opacity-0 group-hover/tag:opacity-100 transition-opacity duration-150 z-50
+                                                                bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 shadow-xl
+                                                                text-white whitespace-nowrap text-left min-w-max">
+                                                                {tooltipLines.map((line, i) => (
+                                                                    <div key={i} className={`leading-5 ${
+                                                                        i === 0 ? 'font-bold text-sm' :
+                                                                        i === 1 ? 'text-xs text-slate-400' :
+                                                                                  'text-xs text-slate-500 mt-0.5'
+                                                                    }`}>{line}</div>
+                                                                ))}
+                                                                {/* 小箭頭 */}
+                                                                <div className="absolute top-full left-1/2 -translate-x-1/2
+                                                                    border-4 border-transparent border-t-slate-600" />
+                                                            </div>
                                                         </div>
                                                     );
                                                 })

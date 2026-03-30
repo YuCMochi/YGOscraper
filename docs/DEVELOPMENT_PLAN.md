@@ -44,6 +44,7 @@ YGOscraper/
 ## 📝 開發備忘錄
 
 ### 2026-03-31
+- v0.4.1 完成：把稀有度 badge 的原生 title tooltip 換成自訂 CSS tooltip，顯示三行格式
 - v0.4.0 完成：稀有度重構 + 並行 Bug 修復 + 兩層專案設定
 - `rarity_name` → `rarity_id`（Konami DB 的 rid），前端標籤分色 + hover tooltip
 - 並行加入購物車 race condition 修復（writeQueue + mutex）
@@ -120,6 +121,7 @@ YGOscraper/
 | **v0.3.0** | ✅ 完成 | 前端強化 + 全域設定 | 全域設定 UI + 健康檢查 + 獨立儲存 |
 | **v0.3.1** | ✅ 完成 | Bug 修復 + 專案管理 | 全域設定 Modal 化、數字輸入修正、刪除專案、查看結果按鈕 |
 | **v0.4.0** | ✅ 完成 | 稀有度重構 + 專案設定 + Bug 修復 | rid 標籤分色、並行加入購物車修復、兩層設定架構 |
+| **v0.4.1** | ✅ 完成 | 前端標籤與 Tooltip 調整 | 純 CSS tooltip 分三行顯示稀有度及卡包出處 |
 | **v0.5.0** | 💡 構想中 | 爬蟲升級（items/v2 API） | 見下方詳細清單 |
 | **v0.6.0** | 💡 構想中 | Neuron 牌組導入 | 見下方詳細清單 |
 | **v0.7.0** | 💡 構想中 | 使用者體驗 + UI 改善 | 見下方詳細清單 |
@@ -173,6 +175,13 @@ YGOscraper/
   - [x] cleaner + calculator + tasks router 均已更新合併邏輯
   - [x] ProjectDetail 專案設定面板擴充為完整 4 項設定
 - [x] **清除舊 cart.json 資料**（不遷移，直接清除）
+
+### v0.4.1 — 前端標籤與 Tooltip 調整 ✅
+
+> 主題：優化稀有度標籤的 Hover 體驗
+
+- [x] 把稀有度 badge 的原生 title tooltip 換成自訂 CSS tooltip
+- [x] Tooltip 內容分三行顯示：中文稀有度、日文全名、卡包出處
 
 ### v0.5.0 — 爬蟲升級（露天 items/v2 API 整合）💡
 
