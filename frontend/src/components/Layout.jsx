@@ -31,7 +31,7 @@ const Layout = ({ children }) => {
                 {/* 底部：服務狀態 + 版本號 */}
                 <DependencyStatus />
                 <div className="p-4 border-t border-slate-700 text-xs text-text-muted text-center">
-                    v0.3.1
+                    v0.4.0
                 </div>
             </aside>
 
