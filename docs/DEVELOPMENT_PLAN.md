@@ -111,9 +111,10 @@ YGOscraper/
 | **v0.2.1** | ✅ 完成 | Bug 修復 + 前端小改善 | ResultsPage 白畫面修復、API 錯誤處理（ApiErrorBanner）、階段六完成 |
 | **v0.3.0** | ✅ 完成 | 前端強化 + 全域設定 | 全域設定 UI + 健康檢查 + 獨立儲存 |
 | **v0.3.1** | ✅ 完成 | Bug 修復 + 專案管理 | 全域設定 Modal 化、數字輸入修正、刪除專案、查看結果按鈕 |
-| **v0.4.0** | 💡 構想中 | 爬蟲升級（items/v2 API） | 見下方詳細清單 |
-| **v0.5.0** | 💡 構想中 | Neuron 牌組導入 | 見下方詳細清單 |
-| **v0.6.0** | 💡 構想中 | 使用者體驗 + UI 改善 | 見下方詳細清單 |
+| **v0.4.0** | 🔧 進行中 | 稀有度重構 + 專案設定 + Bug 修復 | rid 標籤分色、並行加入購物車修復、兩層設定架構 |
+| **v0.5.0** | 💡 構想中 | 爬蟲升級（items/v2 API） | 見下方詳細清單 |
+| **v0.6.0** | 💡 構想中 | Neuron 牌組導入 | 見下方詳細清單 |
+| **v0.7.0** | 💡 構想中 | 使用者體驗 + UI 改善 | 見下方詳細清單 |
 | **v1.0.0** | 🎯 目標 | 正式版 | 功能穩定、文件齊全、可供他人使用與部署 |
 
 ### v0.3.0 — 前端強化 + 全域設定 ✅
@@ -140,13 +141,32 @@ YGOscraper/
 - [x] **全域設定 Modal 化**：從側邊欄移至右上角齒輪 ⚙️ → Modal Window，側邊欄更簡潔
 - [x] **數字輸入框修正**：改用 `text + inputMode="numeric"` 修復刪不掉開頭 0 的 bug，自訂 ±10 Stepper 取代瀏覽器預設按鈕
 - [x] **Tag 輸入清空修正**：排除關鍵字/封鎖賣家輸入後即使重複也會清空輸入框
-- [x] **「全域設定」改名為「專案設定」**：ProjectDetail 右欄標題修正，加上 v0.4.0 註記（目前仍讀寫全域設定）
-- [ ] ~~目標卡號標籤依稀有度分色~~（擱置，使用者有其他想法會更動後端）
+- [x] **「全域設定」改名為「專案設定」**：ProjectDetail 右欄標題修正
 - [x] **查看結果按鈕**：已計算過的專案可從 ProjectDetail 回頭查看結果
 - [x] **刪除專案**：專案卡片 hover 顯示 🗑️ 刪除按鈕，軟刪至 `_legacy/trash/`（可手動恢復）
   - [x] 後端：`DELETE /api/projects/{id}` + `storage.delete_project()`
 
-### v0.4.0 — 爬蟲升級（露天 items/v2 API 整合）💡
+### v0.4.0 — 稀有度重構 + 專案設定 + Bug 修復 ✅
+
+> 主題：cart.json 資料格式重構（breaking change），完整實作兩層設定架構，修復並行 Bug。
+
+- [x] **稀有度 ID 重構 + 標籤分色**：
+  - [x] `rarity_name` → `rarity_id`（Konami DB 的 rid）
+  - [x] 新增 `rarityTypes.js`（24 條 rid 對照表）
+  - [x] 前端標籤依 rid 查表顯示稀有度縮寫 + 分色
+  - [x] Hover tooltip 顯示日文全名（中文通稱）
+- [x] **修復並行加入購物車 race condition**：
+  - [x] 兩階段設計：並行爬取 CID + 序列寫入購物車
+  - [x] writeQueue + isWriting 互斥鎖避免 read-modify-write 衝突
+- [x] **專案設定完整實作（兩層架構）**：
+  - [x] 新增 `CartSettings` schema（shipping_cost, min_purchase, exclude_keywords, exclude_seller）
+  - [x] 數值型：None = 繼承全域，有值 = 覆蓋
+  - [x] 列表型：與全域設定聯集合併
+  - [x] cleaner + calculator + tasks router 均已更新合併邏輯
+  - [x] ProjectDetail 專案設定面板擴充為完整 4 項設定
+- [x] **清除舊 cart.json 資料**（不遷移，直接清除）
+
+### v0.5.0 — 爬蟲升級（露天 items/v2 API 整合）💡
 
 > 主題：利用 Notion 中發現的新 API 一次解決運費精算、複數選項商品、賣家品質三大問題。
 
@@ -171,7 +191,7 @@ YGOscraper/
   - [ ] 建立啟發式規則：商品名 token 中出現無關卡名 → 標記為疑似引流
   - [ ] `cleaner_service.py` 新增引流過濾邏輯（可選擇性開啟，預設關閉）
 
-### v0.5.0 — Neuron 牌組代碼導入 💡
+### v0.6.0 — Neuron 牌組代碼導入 💡
 
 > 主題：殺手級功能，讓使用者用牌組代碼一鍵生成購物車。
 
@@ -187,7 +207,7 @@ YGOscraper/
 - [ ] 非同步效能優化
 - [ ] WebSocket 進度回報
 
-### v0.6.0 — 前端重構 + 使用者體驗全面打磨 💡
+### v0.7.0 — 前端重構 + 使用者體驗全面打磨 💡
 
 > 主題：用 shadcn/ui 重構前端元件庫，並全面打磨 UX 細節。
 
