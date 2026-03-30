@@ -9,7 +9,7 @@ import { getRarityInfo, getRarityStyle, getRarityDisplay } from '../constants/ra
 const ProjectDetail = () => {
     const { projectId } = useParams();
     const navigate = useNavigate();
-    const [cart, setCart] = useState({ shopping_cart: [], global_settings: {} });
+    const [cart, setCart] = useState({ shopping_cart: [], global_settings: {}, cart_settings: {} });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [running, setRunning] = useState(false);
@@ -17,17 +17,30 @@ const ProjectDetail = () => {
     const [error, setError] = useState(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [hasResults, setHasResults] = useState(false);
-    const [shippingStr, setShippingStr] = useState('60');
-    const [minPurchaseStr, setMinPurchaseStr] = useState('0');
+    const [shippingStr, setShippingStr] = useState('');
+    const [minPurchaseStr, setMinPurchaseStr] = useState('');
+    const [globalSettings, setGlobalSettings] = useState(null);
+
+    // 專案設定 tag 輸入暫存
+    const [kwInput, setKwInput] = useState('');
+    const [sellerInput, setSellerInput] = useState('');
 
     // 取得購物車資料
     useEffect(() => {
         const fetchCart = async () => {
             try {
-                const res = await api.get(`/projects/${projectId}/cart`);
-                setCart(res.data);
-                setShippingStr(String(res.data.global_settings?.default_shipping_cost ?? 60));
-                setMinPurchaseStr(String(res.data.global_settings?.min_purchase_limit ?? 0));
+                const [cartRes, settingsRes] = await Promise.all([
+                    api.get(`/projects/${projectId}/cart`),
+                    api.get('/settings'),
+                ]);
+                const data = cartRes.data;
+                setCart(data);
+                setGlobalSettings(settingsRes.data);
+
+                // 專案設定的數值欄位：null = 繼承全域（顯示空值 + placeholder）
+                const cs = data.cart_settings || {};
+                setShippingStr(cs.shipping_cost != null ? String(cs.shipping_cost) : '');
+                setMinPurchaseStr(cs.min_purchase != null ? String(cs.min_purchase) : '');
             } catch (error) {
                 console.error("取得購物車失敗", error);
             } finally {
@@ -35,7 +48,6 @@ const ProjectDetail = () => {
             }
         };
         fetchCart();
-        // 檢查是否有已計算的結果
         api.get(`/projects/${projectId}/results`)
             .then(() => setHasResults(true))
             .catch(() => setHasResults(false));
@@ -378,77 +390,244 @@ const ProjectDetail = () => {
 
                     {/* 專案設定面板 */}
                     <div className="bg-surface border border-slate-700 rounded-lg p-5">
-                        <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-1">專案設定</h3>
-                        <p className="text-xs text-slate-500 mb-4">⚠️ 目前讀寫全域設定，v0.4.0 將實作獨立專案設定</p>
+                        <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">專案設定</h3>
                         <div className="space-y-4">
+                            {/* 🚚 運費 */}
                             <div>
-                                <label className="text-sm block mb-2">🚚 預設運費</label>
+                                <label className="text-sm block mb-1">🚚 運費覆寫</label>
+                                <p className="text-xs text-slate-500 mb-2">
+                                    空白 = 繼承全域設定{globalSettings ? ` (${globalSettings.default_shipping_cost} 元)` : ''}
+                                </p>
                                 <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-9">
                                     <button
                                         className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
                                         onClick={() => {
                                             const v = Math.max(0, (parseInt(shippingStr) || 0) - 10);
                                             setShippingStr(String(v));
-                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, default_shipping_cost: v } }));
+                                            setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, shipping_cost: v } }));
                                         }}
                                     >−</button>
                                     <input
                                         type="text"
                                         inputMode="numeric"
                                         value={shippingStr}
+                                        placeholder={globalSettings ? String(globalSettings.default_shipping_cost) : '60'}
                                         onChange={(e) => {
-                                            if (e.target.value === '' || /^\d+$/.test(e.target.value)) setShippingStr(e.target.value);
+                                            if (e.target.value === '' || /^\d+$/.test(e.target.value)) {
+                                                setShippingStr(e.target.value);
+                                                // 空值 = null（繼承全域），有值 = 覆蓋
+                                                const val = e.target.value === '' ? null : parseInt(e.target.value);
+                                                setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, shipping_cost: val } }));
+                                            }
                                         }}
                                         onBlur={() => {
-                                            const n = parseInt(shippingStr) || 0;
-                                            setShippingStr(String(n));
-                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, default_shipping_cost: n } }));
+                                            if (shippingStr === '') {
+                                                setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, shipping_cost: null } }));
+                                            } else {
+                                                const n = parseInt(shippingStr) || 0;
+                                                setShippingStr(String(n));
+                                                setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, shipping_cost: n } }));
+                                            }
                                         }}
-                                        className="flex-1 text-center font-bold text-sm text-white bg-transparent outline-none"
+                                        className="flex-1 text-center font-bold text-sm text-white bg-transparent outline-none placeholder:text-slate-600"
                                     />
                                     <button
                                         className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
                                         onClick={() => {
                                             const v = (parseInt(shippingStr) || 0) + 10;
                                             setShippingStr(String(v));
-                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, default_shipping_cost: v } }));
+                                            setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, shipping_cost: v } }));
                                         }}
                                     >+</button>
                                 </div>
                             </div>
+
+                            {/* 💰 最低消費 */}
                             <div>
-                                <label className="text-sm block mb-2">💰 最低消費門檻</label>
+                                <label className="text-sm block mb-1">💰 最低消費覆寫</label>
+                                <p className="text-xs text-slate-500 mb-2">
+                                    空白 = 繼承全域設定{globalSettings ? ` (${globalSettings.min_purchase_limit} 元)` : ''}
+                                </p>
                                 <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-9">
                                     <button
                                         className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
                                         onClick={() => {
                                             const v = Math.max(0, (parseInt(minPurchaseStr) || 0) - 10);
                                             setMinPurchaseStr(String(v));
-                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, min_purchase_limit: v } }));
+                                            setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, min_purchase: v } }));
                                         }}
                                     >−</button>
                                     <input
                                         type="text"
                                         inputMode="numeric"
                                         value={minPurchaseStr}
+                                        placeholder={globalSettings ? String(globalSettings.min_purchase_limit) : '0'}
                                         onChange={(e) => {
-                                            if (e.target.value === '' || /^\d+$/.test(e.target.value)) setMinPurchaseStr(e.target.value);
+                                            if (e.target.value === '' || /^\d+$/.test(e.target.value)) {
+                                                setMinPurchaseStr(e.target.value);
+                                                const val = e.target.value === '' ? null : parseInt(e.target.value);
+                                                setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, min_purchase: val } }));
+                                            }
                                         }}
                                         onBlur={() => {
-                                            const n = parseInt(minPurchaseStr) || 0;
-                                            setMinPurchaseStr(String(n));
-                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, min_purchase_limit: n } }));
+                                            if (minPurchaseStr === '') {
+                                                setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, min_purchase: null } }));
+                                            } else {
+                                                const n = parseInt(minPurchaseStr) || 0;
+                                                setMinPurchaseStr(String(n));
+                                                setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, min_purchase: n } }));
+                                            }
                                         }}
-                                        className="flex-1 text-center font-bold text-sm text-white bg-transparent outline-none"
+                                        className="flex-1 text-center font-bold text-sm text-white bg-transparent outline-none placeholder:text-slate-600"
                                     />
                                     <button
                                         className="px-3 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full font-bold"
                                         onClick={() => {
                                             const v = (parseInt(minPurchaseStr) || 0) + 10;
                                             setMinPurchaseStr(String(v));
-                                            setCart(prev => ({ ...prev, global_settings: { ...prev.global_settings, min_purchase_limit: v } }));
+                                            setCart(prev => ({ ...prev, cart_settings: { ...prev.cart_settings, min_purchase: v } }));
                                         }}
                                     >+</button>
+                                </div>
+                            </div>
+
+                            {/* 🚫 排除關鍵字 */}
+                            <div>
+                                <label className="text-sm block mb-1">🚫 專案排除關鍵字</label>
+                                <p className="text-xs text-slate-500 mb-2">
+                                    與全域設定合併使用（聯集）
+                                </p>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={kwInput}
+                                        onChange={(e) => setKwInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                const val = kwInput.trim();
+                                                if (!val) return;
+                                                const existing = cart.cart_settings?.exclude_keywords || [];
+                                                if (existing.includes(val)) { setKwInput(''); return; }
+                                                setCart(prev => ({
+                                                    ...prev,
+                                                    cart_settings: {
+                                                        ...prev.cart_settings,
+                                                        exclude_keywords: [...(prev.cart_settings?.exclude_keywords || []), val],
+                                                    },
+                                                }));
+                                                setKwInput('');
+                                            }
+                                        }}
+                                        placeholder="例如：卡套"
+                                        className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-text
+                                                placeholder:text-slate-500 focus:outline-none focus:border-primary
+                                                focus:ring-1 focus:ring-primary/50 transition-colors"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const val = kwInput.trim();
+                                            if (!val) return;
+                                            const existing = cart.cart_settings?.exclude_keywords || [];
+                                            if (existing.includes(val)) { setKwInput(''); return; }
+                                            setCart(prev => ({
+                                                ...prev,
+                                                cart_settings: {
+                                                    ...prev.cart_settings,
+                                                    exclude_keywords: [...(prev.cart_settings?.exclude_keywords || []), val],
+                                                },
+                                            }));
+                                            setKwInput('');
+                                        }}
+                                        className="px-3 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors text-sm"
+                                    >+</button>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {(cart.cart_settings?.exclude_keywords || []).map((kw, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-danger/20 text-danger text-xs rounded-full border border-danger/30 font-medium">
+                                            {kw}
+                                            <button
+                                                onClick={() => setCart(prev => ({
+                                                    ...prev,
+                                                    cart_settings: {
+                                                        ...prev.cart_settings,
+                                                        exclude_keywords: (prev.cart_settings?.exclude_keywords || []).filter((_, idx) => idx !== i),
+                                                    },
+                                                }))}
+                                                className="hover:text-white transition-colors"
+                                            >×</button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 🛑 封鎖賣家 */}
+                            <div>
+                                <label className="text-sm block mb-1">🛑 專案封鎖賣家</label>
+                                <p className="text-xs text-slate-500 mb-2">
+                                    與全域設定合併使用（聯集）
+                                </p>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={sellerInput}
+                                        onChange={(e) => setSellerInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                const val = sellerInput.trim();
+                                                if (!val) return;
+                                                const existing = cart.cart_settings?.exclude_seller || [];
+                                                if (existing.includes(val)) { setSellerInput(''); return; }
+                                                setCart(prev => ({
+                                                    ...prev,
+                                                    cart_settings: {
+                                                        ...prev.cart_settings,
+                                                        exclude_seller: [...(prev.cart_settings?.exclude_seller || []), val],
+                                                    },
+                                                }));
+                                                setSellerInput('');
+                                            }
+                                        }}
+                                        placeholder="輸入賣家 ID"
+                                        className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-text
+                                                placeholder:text-slate-500 focus:outline-none focus:border-primary
+                                                focus:ring-1 focus:ring-primary/50 transition-colors font-mono"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const val = sellerInput.trim();
+                                            if (!val) return;
+                                            const existing = cart.cart_settings?.exclude_seller || [];
+                                            if (existing.includes(val)) { setSellerInput(''); return; }
+                                            setCart(prev => ({
+                                                ...prev,
+                                                cart_settings: {
+                                                    ...prev.cart_settings,
+                                                    exclude_seller: [...(prev.cart_settings?.exclude_seller || []), val],
+                                                },
+                                            }));
+                                            setSellerInput('');
+                                        }}
+                                        className="px-3 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors text-sm"
+                                    >+</button>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {(cart.cart_settings?.exclude_seller || []).map((id, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-full border border-amber-500/30 font-mono font-medium">
+                                            {id}
+                                            <button
+                                                onClick={() => setCart(prev => ({
+                                                    ...prev,
+                                                    cart_settings: {
+                                                        ...prev.cart_settings,
+                                                        exclude_seller: (prev.cart_settings?.exclude_seller || []).filter((_, idx) => idx !== i),
+                                                    },
+                                                }))}
+                                                className="hover:text-white transition-colors"
+                                            >×</button>
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                         </div>

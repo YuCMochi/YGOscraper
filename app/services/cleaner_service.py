@@ -87,15 +87,23 @@ class DataCleaner:
             raise RuntimeError(f"設定檔格式不正確: {cart_path}")
 
         global_settings = config.get("global_settings", {})
+        cart_settings = config.get("cart_settings", {})
 
-        # 取得排除關鍵字
-        exclude_keywords = global_settings.get("global_exclude_keywords", [])
-        logger.info(f"排除關鍵字: {exclude_keywords}")
+        # 兩層設定合併（v0.4.0 方案 A）：
+        # - 列表型：全域 + 專案 聯集
+        # - 數值型：專案有值就覆蓋，None 就用全域
+        exclude_keywords = list(set(
+            global_settings.get("global_exclude_keywords", []) +
+            cart_settings.get("exclude_keywords", [])
+        ))
+        logger.info(f"排除關鍵字（合併後）: {exclude_keywords}")
 
-        # 取得排除賣家
-        exclude_sellers = global_settings.get("global_exclude_seller", [])
+        exclude_sellers = list(set(
+            global_settings.get("global_exclude_seller", []) +
+            cart_settings.get("exclude_seller", [])
+        ))
         if exclude_sellers:
-            logger.info(f"排除賣家 ID: {exclude_sellers}")
+            logger.info(f"排除賣家 ID（合併後）: {exclude_sellers}")
 
         # 建立卡片名稱 → 目標卡號的對應字典（用來做精確過濾）
         card_target_map = {}

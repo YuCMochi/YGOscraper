@@ -78,6 +78,24 @@ class GlobalSettings(BaseModel):
 
 
 # ============================================================
+# 專案級設定 Schema
+# ============================================================
+
+class CartSettings(BaseModel):
+    """
+    專案級設定，疊加在 global_settings 之上。
+
+    設計原則（方案 A：兩層設定架構，2026-03-25 決議）：
+    - 數值型（shipping_cost, min_purchase）：None = 繼承全域，有值 = 覆蓋
+    - 列表型（exclude_keywords, exclude_seller）：與全域設定聯集合併
+    """
+    shipping_cost: Optional[int] = None                                    # None = 繼承全域 default_shipping_cost
+    min_purchase: Optional[int] = None                                     # None = 繼承全域 min_purchase_limit
+    exclude_keywords: List[str] = Field(default_factory=list)              # 專案額外排除關鍵字（疊加）
+    exclude_seller: List[str] = Field(default_factory=list)                # 專案額外封鎖賣家（疊加）
+
+
+# ============================================================
 # 購物車整體 Schema
 # ============================================================
 
@@ -87,6 +105,7 @@ class CartData(BaseModel):
     """
     shopping_cart: List[CartItemFull] = Field(default_factory=list)
     global_settings: GlobalSettings = Field(default_factory=GlobalSettings)
+    cart_settings: CartSettings = Field(default_factory=CartSettings)
 
 
 # ============================================================

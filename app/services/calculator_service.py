@@ -60,8 +60,11 @@ class PurchaseOptimizer:
         }
 
         settings = cart_data.get("global_settings", {})
-        shipping_fee = settings.get("default_shipping_cost", 60)
-        min_purchase_limit = settings.get("min_purchase_limit", 0)
+        cart_s = cart_data.get("cart_settings", {})
+
+        # 兩層設定合併（v0.4.0）：cart_settings 有值就覆蓋 global_settings
+        shipping_fee = cart_s.get("shipping_cost") if cart_s.get("shipping_cost") is not None else settings.get("default_shipping_cost", 60)
+        min_purchase_limit = cart_s.get("min_purchase") if cart_s.get("min_purchase") is not None else settings.get("min_purchase_limit", 0)
 
         logger.info(f"預設運費: {shipping_fee} 元")
         if min_purchase_limit > 0:

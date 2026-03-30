@@ -119,11 +119,15 @@ async def get_results(project_name: str):
     summary = raw.get("summary", {})
     sellers = raw.get("sellers", {})
 
-    # 讀取購物車，取得預設運費用於沒有 shipping_cost 的賣家
+    # 讀取購物車，取得有效運費（cart_settings 覆蓋 > global_settings > 60）
     try:
         cart_data = storage.get_cart(project_name)
-        default_shipping = cart_data.get("global_settings", {}).get(
-            "default_shipping_cost", 60
+        cart_s = cart_data.get("cart_settings", {})
+        global_s = cart_data.get("global_settings", {})
+        default_shipping = (
+            cart_s.get("shipping_cost")
+            if cart_s.get("shipping_cost") is not None
+            else global_s.get("default_shipping_cost", 60)
         )
     except Exception:
         default_shipping = 60

@@ -30,6 +30,12 @@ _DEFAULT_CART = {
         "global_exclude_keywords": [],
         "global_exclude_seller": [],
     },
+    "cart_settings": {
+        "shipping_cost": None,
+        "min_purchase": None,
+        "exclude_keywords": [],
+        "exclude_seller": [],
+    },
 }
 
 # global_settings 的預設值（獨立常數，方便引用）
@@ -122,10 +128,13 @@ def get_cart(project_name: str) -> dict:
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # 確保 global_settings 欄位存在（向下兼容舊格式）
+        # 確保 global_settings 欄位存在（向下相容舊格式）
         if "global_settings" not in data:
             # deepcopy 確保補丁進去的是獨立的新物件
             data["global_settings"] = copy.deepcopy(_DEFAULT_CART["global_settings"])
+        # 確保 cart_settings 欄位存在（v0.4.0 新增，舊 cart.json 可能沒有）
+        if "cart_settings" not in data:
+            data["cart_settings"] = copy.deepcopy(_DEFAULT_CART["cart_settings"])
         return data
     except (json.JSONDecodeError, IOError) as e:
         raise RuntimeError(f"讀取購物車 {path} 失敗: {e}") from e
