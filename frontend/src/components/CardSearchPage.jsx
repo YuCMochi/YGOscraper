@@ -91,62 +91,49 @@ const CardSearchPage = () => {
     }, [searchQuery, dbReady]);
 
     // ============================================================
-    // 加入購物車：用 CID 查卡號 → 加入購物車
+    // 加入購物車：兩階段設計（並行爬取 + 序列寫入）
     // ============================================================
-    const handleAddToCart = async (card) => {
-        setAddingCards(prev => ({ ...prev, [card.id]: 'loading' }));
+    // Stage 1: 按下按鈕 → 開始爬 CID 卡號（可並行）
+    // Stage 2: 爬完後排入 queue → 依序 GET cart → push → POST（互斥鎖）
+    //
+    // 這樣避免 race condition：多張卡同時 GET → 各自 push → POST 時互相覆蓋
 
-        try {
-            // 1. 若卡片具備 CID，用 CID 向後端取得卡號列表
-            let cardNumbers = [];
-            if (card.cid) {
-                const cidsRes = await api.get(`/cards/cid/${card.cid}/card-numbers`);
-                cardNumbers = cidsRes.data.card_numbers || [];
-                console.log(`卡片「${card.tw_name}」爬取到 ${cardNumbers.length} 個卡號:`, cardNumbers.slice(0, 5));
-            } else {
-                console.warn(`卡片「${card.tw_name}」缺少 CID，無法自動爬取卡號。`);
-            }
+    const writeQueue = useRef([]);       // 等待寫入的卡片資料佇列
+    const isWriting = useRef(false);     // 互斥鎖：是否有人正在寫入購物車
 
-            // 2. 取得目前購物車
-            const cartRes = await api.get(`/projects/${projectId}/cart`);
-            const cartData = cartRes.data;
+    /**
+     * 建構卡片的 cart item 物件
+     */
+    const buildCartItem = (card, cardNumbers) => ({
+        card_name_zh: card.tw_name,
+        passcode: card.id,
+        cid: card.cid,
+        type: card.type,
+        atk: card.atk,
+        def: card.def,
+        level: card.level,
+        race: card.race,
+        attribute: card.attribute,
+        image_url: card.image_url,
+        target_card_numbers: cardNumbers,
+        required_amount: 1,
+    });
 
-            // 確保 global_settings 存在完整預設值
-            if (!cartData.global_settings) {
-                cartData.global_settings = {
-                    default_shipping_cost: 60,
-                    min_purchase_limit: 0,
-                    global_exclude_keywords: [],
-                    global_exclude_seller: [],
-                };
-            }
+    /**
+     * Stage 2: 從 queue 取出卡片，依序寫入購物車
+     * 使用互斥鎖確保同一時間只有一個寫入操作
+     */
+    const processWriteQueue = async () => {
+        if (isWriting.current) return;  // 已經有人在處理了
+        isWriting.current = true;
 
-            // 3. 加入新卡片 (包含豐富的卡片資訊)
-            cartData.shopping_cart.push({
-                card_name_zh: card.tw_name,
-                passcode: card.id,
-                cid: card.cid,
-                type: card.type,
-                atk: card.atk,
-                def: card.def,
-                level: card.level,
-                race: card.race,
-                attribute: card.attribute,
-                image_url: card.image_url,
-                target_card_numbers: cardNumbers,
-                required_amount: 1,
-            });
-
-            // 4. 存回購物車
-            await api.post(`/projects/${projectId}/cart`, cartData);
-
-            setAddingCards(prev => ({ ...prev, [card.id]: 'done' }));
-        } catch (err) {
-            console.error('加入購物車失敗:', err);
-            // 如果爬卡號失敗，至少把卡名加進去（無卡號版本）
+        while (writeQueue.current.length > 0) {
+            const { card, cartItem } = writeQueue.current.shift();
             try {
+                // 每次都重新 GET 最新的購物車（序列化，不會衝突）
                 const cartRes = await api.get(`/projects/${projectId}/cart`);
                 const cartData = cartRes.data;
+
                 if (!cartData.global_settings) {
                     cartData.global_settings = {
                         default_shipping_cost: 60,
@@ -155,26 +142,44 @@ const CardSearchPage = () => {
                         global_exclude_seller: [],
                     };
                 }
-                cartData.shopping_cart.push({
-                    card_name_zh: card.tw_name,
-                    passcode: card.id,
-                    cid: card.cid,
-                    type: card.type,
-                    atk: card.atk,
-                    def: card.def,
-                    level: card.level,
-                    race: card.race,
-                    attribute: card.attribute,
-                    image_url: card.image_url,
-                    target_card_numbers: [],
-                    required_amount: 1,
-                });
+
+                cartData.shopping_cart.push(cartItem);
                 await api.post(`/projects/${projectId}/cart`, cartData);
+
                 setAddingCards(prev => ({ ...prev, [card.id]: 'done' }));
-            } catch (err2) {
+            } catch (err) {
+                console.error(`寫入購物車失敗（${card.tw_name}）:`, err);
                 setAddingCards(prev => ({ ...prev, [card.id]: 'error' }));
             }
         }
+
+        isWriting.current = false;
+    };
+
+    /**
+     * Stage 1: 按下按鈕 → 爬取 CID 卡號 → 排入寫入佇列
+     */
+    const handleAddToCart = async (card) => {
+        setAddingCards(prev => ({ ...prev, [card.id]: 'loading' }));
+
+        // Stage 1: 爬取卡號（並行，不阻塞其他卡片的爬取）
+        let cardNumbers = [];
+        try {
+            if (card.cid) {
+                const cidsRes = await api.get(`/cards/cid/${card.cid}/card-numbers`);
+                cardNumbers = cidsRes.data.card_numbers || [];
+                console.log(`卡片「${card.tw_name}」爬取到 ${cardNumbers.length} 個卡號`);
+            } else {
+                console.warn(`卡片「${card.tw_name}」缺少 CID，無法自動爬取卡號。`);
+            }
+        } catch (err) {
+            console.error(`爬取卡號失敗（${card.tw_name}），將以無卡號版本加入:`, err);
+        }
+
+        // Stage 2: 排入寫入佇列
+        const cartItem = buildCartItem(card, cardNumbers);
+        writeQueue.current.push({ card, cartItem });
+        processWriteQueue();  // 嘗試啟動佇列處理（若已在處理中則由互斥鎖跳過）
     };
 
     // ============================================================
