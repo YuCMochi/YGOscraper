@@ -4,6 +4,7 @@ import api from '../lib/api';
 import { ArrowLeft, Save, Play, Trash2, Plus, Search, Loader2, ShoppingCart, BarChart3 } from 'lucide-react';
 import ApiErrorBanner from './ApiErrorBanner';
 import { attrNames, raceNames } from '../constants/cardTypes';
+import { getRarityInfo, getRarityStyle, getRarityDisplay } from '../constants/rarityTypes';
 
 const ProjectDetail = () => {
     const { projectId } = useParams();
@@ -294,23 +295,26 @@ const ProjectDetail = () => {
                                                     // 舊資料相容：如果是字串，轉為物件形式
                                                     const isString = typeof cardObj === 'string';
                                                     const displayNum = isString ? cardObj : cardObj.card_number;
-                                                    const rarityName = isString ? null : cardObj.rarity_name;
+                                                    const rarityId = isString ? null : cardObj.rarity_id;
 
-                                                    // 根據稀有度決定標籤顏色
-                                                    let bgColor = "bg-slate-700", textColor = "text-slate-200", borderColor = "border-transparent";
-                                                    if (rarityName) {
-                                                        const r = rarityName.toLowerCase();
-                                                        if (r.includes('secret') || r.includes('半鑽') || r.includes('白鑽')) { bgColor = "bg-rose-900/40"; textColor = "text-rose-200"; borderColor = "border-rose-500/30"; }
-                                                        else if (r.includes('ultra') || r.includes('金亮')) { bgColor = "bg-amber-900/40"; textColor = "text-amber-200"; borderColor = "border-amber-500/30"; }
-                                                        else if (r.includes('super') || r.includes('亮面')) { bgColor = "bg-blue-900/40"; textColor = "text-blue-200"; borderColor = "border-blue-500/30"; }
-                                                        else if (r.includes('normal') || r.includes('普卡')) { bgColor = "bg-slate-800"; textColor = "text-slate-300"; borderColor = "border-slate-600"; }
-                                                        else { bgColor = "bg-purple-900/40"; textColor = "text-purple-200"; borderColor = "border-purple-500/30"; }
-                                                    }
+                                                    // 用 rid 查表取得稀有度樣式
+                                                    const rarityStyle = getRarityStyle(rarityId);
+                                                    const rarityInfo = getRarityInfo(rarityId);
+                                                    const tooltipText = isString
+                                                        ? '手動指定卡號'
+                                                        : `${cardObj.pack_name} — ${getRarityDisplay(rarityId)}`;
 
                                                     return (
-                                                        <div key={idIdx} className={`group/tag flex items-center text-xs px-2 py-1 rounded border ${bgColor} ${textColor} ${borderColor} transition-colors cursor-default`} title={isString ? '指定卡號' : `${cardObj.pack_name} - ${rarityName}`}>
+                                                        <div
+                                                            key={idIdx}
+                                                            className="group/tag flex items-center text-xs px-2 py-1 rounded border transition-colors cursor-default"
+                                                            style={rarityStyle}
+                                                            title={tooltipText}
+                                                        >
                                                             <span className="font-mono">{displayNum}</span>
-                                                            {rarityName && <span className="ml-1 opacity-75 hidden sm:inline-block">({rarityName})</span>}
+                                                            {rarityId && (
+                                                                <span className="ml-1.5 opacity-75 font-medium">{rarityInfo.short}</span>
+                                                            )}
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); removeCardId(idx, idIdx); }}
                                                                 className="ml-1.5 -mr-0.5 opacity-50 hover:opacity-100 hover:text-danger focus:outline-none transition-opacity"

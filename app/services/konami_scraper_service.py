@@ -41,7 +41,7 @@ class KonamiScraperService:
                     card_numbers.append(
                         {
                             "card_number": v["card_number"],
-                            "rarity_name": v.get("rarity_name", ""),
+                            "rarity_id": v.get("rarity_id", ""),
                             "pack_name": v.get("pack_name", ""),
                         }
                     )

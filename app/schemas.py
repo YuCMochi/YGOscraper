@@ -15,10 +15,11 @@ from typing import List, Optional, Union
 class CardNumberInfo(BaseModel):
     """
     單一卡號版本的完整資訊。
-    例如：{ "card_number": "DABL-JP035", "rarity_name": "Secret Rare", "pack_name": "..." }
+    例如：{ "card_number": "DABL-JP035", "rarity_id": "5", "pack_name": "..." }
+    rarity_id 對應 Konami DB 的 CSS class rid_XX，前端查 rarityTypes.js 顯示詳細資訊。
     """
     card_number: str
-    rarity_name: Optional[str] = ""
+    rarity_id: Optional[str] = ""
     pack_name: Optional[str] = ""
 
 
