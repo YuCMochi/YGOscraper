@@ -37,7 +37,7 @@ const ProjectList = () => {
     }
 
     const handleDeleteProject = async (projectId) => {
-        if (!window.confirm(`確定要刪除專案「${projectId}」嗎？\n（會移至垃圾桶，可手動恢復）`)) return;
+        if (!window.confirm(`確定要刪除專案「${projectId}」嗎？\n（資料將被永久刪除！）`)) return;
         try {
             await api.delete(`/projects/${projectId}`);
             await fetchProjects();
