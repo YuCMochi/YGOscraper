@@ -32,4 +32,3 @@ output/
 !data/cart.json
 !.claude/**/*.json
 .claude/settings.local.json
-data/
