@@ -30,4 +30,5 @@ output/
 *.json
 !frontend/package.json
 !data/cart.json
-data/
+!.claude/**/*.json
+.claude/settings.local.json
