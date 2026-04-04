@@ -13,7 +13,6 @@ const ProjectDetail = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [running, setRunning] = useState(false);
-    const [results, setResults] = useState(null);
     const [error, setError] = useState(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [hasResults, setHasResults] = useState(false);

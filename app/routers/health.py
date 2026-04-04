@@ -12,9 +12,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.config import (
+    CARD_IMAGE_BASE_URL,
     CARDS_CDB_URL,
     CID_TABLE_URL,
-    CARD_IMAGE_BASE_URL,
     KONAMI_DB_BASE_URL,
     RUTEN_API_BASE_URL,
 )

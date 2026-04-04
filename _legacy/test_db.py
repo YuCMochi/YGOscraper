@@ -1,7 +1,7 @@
-import sqlite3
 import json
-import urllib.request
 import os
+import sqlite3
+import urllib.request
 
 print("Testing CDB download to memory...")
 try:

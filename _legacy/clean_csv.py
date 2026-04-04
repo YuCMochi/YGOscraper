@@ -1,8 +1,9 @@
+import argparse
 import csv
 import json
 import os
-import argparse
 import re
+
 
 def check_card_code_match(target_code, text):
     """

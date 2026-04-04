@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *$py.class
 env/
@@ -29,6 +30,7 @@ output/
 *.log
 *.json
 !frontend/package.json
+!frontend/package-lock.json
 !data/cart.json
 !.claude/**/*.json
 .claude/settings.local.json

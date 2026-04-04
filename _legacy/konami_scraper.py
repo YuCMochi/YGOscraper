@@ -1,12 +1,11 @@
-import requests
 import argparse
-import os
-import re
-import json
 import csv
-import time
-import random
 import logging
+import random
+import re
+import time
+
+import requests
 from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -205,7 +204,7 @@ if __name__ == "__main__":
     # 輸出結果到 CSV 檔案
     if all_data:
         # 如果使用者沒有指定檔名，則使用預設檔名 konami_cards_data.csv
-        output_file = args.output if args.output else f"konami_cards_data.csv"
+        output_file = args.output if args.output else "konami_cards_data.csv"
         
         try:
             with open(output_file, "w", encoding="utf-8", newline='') as f:

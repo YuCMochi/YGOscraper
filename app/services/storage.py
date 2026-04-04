@@ -8,10 +8,10 @@ app/services/storage.py - 專案資料的統一讀寫管理
 - 格式驗證集中在這裡，不會到處散落 with open(...) 的程式碼
 - 未來要換成資料庫（SQLite/PostgreSQL），只需修改這個檔案即可
 """
-import os
-import json
 import copy  # 用於 deepcopy，確保預設結構每次回傳獨立的物件
+import json
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -244,8 +244,8 @@ def delete_project(project_name: str) -> None:
     Raises:
         FileNotFoundError: 專案不存在時
     """
-    import shutil
     import datetime as dt
+    import shutil
 
     project_path = _get_project_dir(project_name)
     if not os.path.exists(project_path):

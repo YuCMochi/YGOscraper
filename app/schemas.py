@@ -4,9 +4,9 @@ app/schemas.py - 統一的 Pydantic 資料模型定義
 這個檔案是後端資料的「守門員」。
 所有進出 API 的資料格式都在這裡統一定義，確保格式正確。
 """
-from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 
+from pydantic import BaseModel, Field
 
 # ============================================================
 # 卡號相關 Schema

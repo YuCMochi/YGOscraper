@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Search, Loader2, ShoppingCart, Check, Database } from 'lucide-react';
 import api from '../lib/api';
 import ApiErrorBanner from './ApiErrorBanner';
@@ -17,13 +17,12 @@ import {
 // ============================================================
 const CardSearchPage = () => {
     const { projectId } = useParams();
-    const navigate = useNavigate();
 
     // 資料庫狀態
     const [dbReady, setDbReady] = useState(false);
     const [dbLoading, setDbLoading] = useState(true);
-    const [dbError, setDbError] = useState(null);
-    const [loadProgress, setLoadProgress] = useState('正在初始化...');
+    const [dbError] = useState(null);
+    const [loadProgress] = useState('正在初始化...');
 
     // 搜尋狀態
     const [searchQuery, setSearchQuery] = useState('');

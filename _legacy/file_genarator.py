@@ -1,7 +1,8 @@
-import os
-import json
 import datetime
+import json
+import os
 import shutil
+
 
 class FileGenerator:
     def __init__(self, base_dir='data'):

@@ -143,7 +143,7 @@ const GlobalSettingsModal = ({ isOpen, onClose }) => {
     // ============================================================
     // 數字 Stepper 共用元件
     // ============================================================
-    const NumericStepper = ({ value, strValue, setStrValue, onUpdate, step = 10, min = 0 }) => (
+    const NumericStepper = ({ strValue, setStrValue, onUpdate, step = 10, min = 0 }) => (
         <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-10">
             <button
                 className="px-4 text-text-muted hover:text-white hover:bg-slate-800 transition-colors h-full text-lg font-bold"

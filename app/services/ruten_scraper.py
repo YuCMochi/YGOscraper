@@ -6,22 +6,20 @@ app/services/ruten_scraper.py - 露天拍賣爬蟲服務
 
 功能：根據購物車中的卡片清單，到露天拍賣搜尋商品並儲存為 CSV。
 """
-import os
-import json
-import time
-import logging
 import asyncio
+import json
+import logging
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Dict, List
 
-import requests
 import aiohttp
 import pandas as pd
-import numpy as np
+import requests
 from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from app.config import RUTEN_API_BASE_URL, RUTEN_IMAGE_BASE_URL
 
