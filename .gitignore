@@ -30,6 +30,7 @@ output/
 *.log
 *.json
 !frontend/package.json
+!frontend/package-lock.json
 !data/cart.json
 !.claude/**/*.json
 .claude/settings.local.json
