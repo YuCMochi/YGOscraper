@@ -25,7 +25,6 @@
 | 用途 | URL | 使用位置 |
 |------|-----|---------|
 | 查卡（by CID） | `https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid={cid}` | `konami_scraper.py` |
-| 卡片密碼→CID 對照表 | `https://github.com/salix5/heliosphere/blob/master/data/cid_table.json` | `app/services/card_db.py` |
 
 ---
 
@@ -35,6 +34,7 @@
 |------|-----|---------|
 | 卡片圖床 | `https://github.com/salix5/query-data/blob/gh-pages/pics/{卡片密碼}.jpg` | 前端卡圖顯示 |
 | 核心卡片數據（CDB） | `https://github.com/salix5/cdb/blob/gh-pages/cards.cdb` | `app/services/card_db.py` |
+| 卡片密碼→CID 對照表 | `https://github.com/salix5/heliosphere/blob/master/data/cid_table.json` | `app/services/card_db.py` |
 
 ---
 
