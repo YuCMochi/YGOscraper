@@ -63,7 +63,7 @@ version: 0.1.0
 | `前端` | 涉及 React / UI | `f89287ec-79af-41c5-8bb7-436934858400` |
 | `後端` | 涉及 FastAPI / Python service | `979c1633-2658-490a-bef3-86b4a92cd75c` |
 | `DB` | 涉及資料庫/資料儲存 | `4ee5137a-7453-4696-8181-424529ccf803` |
-| `Realease` | 屬於發布/部署相關 | `ccdf2d00-7dc5-44c9-b5b3-c54346444eae` |
+| `Release` | 屬於發布/部署相關 | `ccdf2d00-7dc5-44c9-b5b3-c54346444eae` |
 
 若現有標籤不夠描述，可新增自訂標籤——在 patch-page 的 `multi_select` 中直接用 `{"name": "新標籤名"}` （不帶 id），Notion 會自動建立新選項。
 
