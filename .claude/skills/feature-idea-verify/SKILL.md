@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Feature Idea Verify
 
-掃描 codebase 確認「🗓️ 已排程」的 idea 是否已實作，向使用者報告結果，取得確認後更新 Notion 狀態至「✅ 已實作」並在 DEVELOPMENT_PLAN.md 打勾。
+掃描 codebase 確認「🗓️ 已排程」的 idea 是否已實作，向使用者報告結果，取得確認後更新 Notion 狀態至「✅ 已實作」並關閉對應的 GitHub Issue。
 
 **所有 Notion 更新在取得使用者確認後才執行。**
 
@@ -20,9 +20,14 @@ version: 0.1.0
 - evaluate 寫的「實作方法」（應在頁面 block 中）
 - plan 寫的「排程記錄」（對應哪個版本、哪些檔案）
 
-### Step 2：讀取 DEVELOPMENT_PLAN.md
+### Step 2：讀取 GitHub Issues 排程記錄
 
-`docs/DEVELOPMENT_PLAN.md` 是「官方排程記錄」，找到每個 idea 對應的 checkbox 項目，確認哪些已打勾（`[x]`）、哪些未打勾（`[ ]`）。
+用 `gh issue list --milestone "v0.5.0 — 爬蟲升級（items/v2 API）" --state open` 等指令，
+找到每個 idea 對應的 GitHub Issue，確認：
+- Issue 是否存在（有則記下 Issue number）
+- Issue body 中記載的實作路徑
+
+若 Notion 排程記錄中有寫 Issue URL，直接用 `gh issue view <number>` 查閱。
 
 ### Step 3：掃描 codebase 驗證實作
 
@@ -104,9 +109,13 @@ params:
         驗證依據：<驗證時找到的檔案/function>
 ```
 
-**5-3. 在 DEVELOPMENT_PLAN.md 打勾**
+**5-3. 關閉 GitHub Issue**
 
-將對應 checkbox `- [ ]` 改為 `- [x]`（使用 `Edit` 工具，提供足夠的上下文確保唯一匹配）。
+若 Notion 排程記錄有 Issue URL（或 triage 時查到 Issue number）：
+
+```bash
+gh issue close <issue_number> --comment "已實作完成，詳見對應 PR。"
+```
 
 ## 常見實作位置速查
 

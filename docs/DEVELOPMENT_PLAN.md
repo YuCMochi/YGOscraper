@@ -1,8 +1,14 @@
-# YGOscraper 開發計畫與進度追蹤
+# YGOscraper 開發計畫與進度追蹤（封存）
 
-> **最後更新**：2026-03-31
-> **用途**：這份文件是 AI 助手和開發者共用的「活文件」，紀錄整體開發目標、進度、和備忘事項。
-> 每次對話都可以更新此文件。
+> **封存日期**：2026-04-04
+> **狀態**：此文件已封存，不再更新。
+>
+> **遷移說明**：
+> - 版本路線圖與功能追蹤 → [GitHub Issues & Milestones](https://github.com/YuCMochi/YGOscraper/issues)
+> - 設計備註 → [`openspec/specs/architecture-decisions.md`](../openspec/specs/architecture-decisions.md)
+> - 外部 API 參考 → [`openspec/specs/external-apis.md`](../openspec/specs/external-apis.md)
+>
+> 本文件保留歷史開發備忘錄（按日期）和目標檔案結構供參考。
 
 ## 🏗️ 目標檔案結構
 
