@@ -7,10 +7,10 @@ app/services/calculator_service.py - 最佳購買組合計算服務
 功能：使用 PuLP（線性規劃）找出最省錢的購買方案。
 目標函數：商品總價 + 運費 = 最小化
 """
-import json
-import os
 import datetime
+import json
 import logging
+import os
 
 import pandas as pd
 import pulp

@@ -1,20 +1,18 @@
-import requests
-import pandas as pd
-from datetime import datetime
-import logging
-import json
-import time
-from fake_useragent import UserAgent
-import os
 import argparse
-import sys
+import asyncio
+import json
+import logging
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+from typing import Dict, List
+
+import aiohttp
+import pandas as pd
+import requests
+from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import asyncio
-import aiohttp
-from typing import List, Dict, Any
-import numpy as np
 
 # 設定程式的日誌 (Log) 格式，方便除錯
 logging.basicConfig(

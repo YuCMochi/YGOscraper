@@ -6,10 +6,11 @@ app/services/konami_scraper.py - Konami 官方資料庫爬蟲
 
 功能：根據 CID（Konami 卡片 ID）爬取該卡片的所有版本卡號與稀有度。
 """
+import logging
+import random
 import re
 import time
-import random
-import logging
+
 import requests
 from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter

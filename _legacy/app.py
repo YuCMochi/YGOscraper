@@ -1,9 +1,9 @@
-import eel
-import os
 import json
-import sys
+import os
 import subprocess
-import time
+import sys
+
+import eel
 from file_genarator import FileGenerator
 from konami_scraper import KonamiScraper
 

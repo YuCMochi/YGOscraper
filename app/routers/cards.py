@@ -9,6 +9,7 @@ app/routers/cards.py - 卡片搜尋與卡號爬取的 API 路由
 不直接接觸底層的 SQLite 連線或全域變數，也不反向引用 server 模組。
 """
 from fastapi import APIRouter, HTTPException, Request
+
 from app.services.konami_scraper_service import KonamiScraperService
 
 router = APIRouter(prefix="/api", tags=["cards"])

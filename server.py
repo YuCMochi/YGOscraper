@@ -79,7 +79,7 @@ app.add_middleware(
 # ============================================================
 # 掛載 API 路由模組
 # ============================================================
-from app.routers import projects, cart, cards, tasks, health, settings  # noqa: E402
+from app.routers import cards, cart, health, projects, settings, tasks  # noqa: E402
 
 app.include_router(projects.router)
 app.include_router(cart.router)

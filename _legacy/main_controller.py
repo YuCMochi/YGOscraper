@@ -1,8 +1,10 @@
 import os
-import sys
 import subprocess
-import file_genarator # 引用剛剛寫好的檔案產生器
+import sys
 from typing import Optional
+
+import file_genarator  # 引用剛剛寫好的檔案產生器
+
 
 class MainController:
     def __init__(self):
@@ -31,7 +33,7 @@ class MainController:
             raise ValueError("錯誤：專案尚未初始化，請先執行 initialize_project()。")
         
         cart_path = os.path.join(self.project_path, "cart.json")
-        print(f"\n[系統等待中]")
+        print("\n[系統等待中]")
         print(f"請確認購物車設定檔內容正確: {cart_path}")
         print("由於這是自動化流程，系統將假設您已設定完成，繼續執行下一步...")
         return True
@@ -49,7 +51,7 @@ class MainController:
         cart_path = os.path.join(self.project_path, "cart.json")
         output_csv = os.path.join(self.project_path, "ruten_data.csv")
         
-        print(f"\n[啟動爬蟲模組]...")
+        print("\n[啟動爬蟲模組]...")
         # 呼叫 scraper.py 並傳入參數
         cmd = [sys.executable, "scraper.py", "--cart", cart_path, "--output", output_csv]
         subprocess.check_call(cmd)
@@ -68,7 +70,7 @@ class MainController:
         output_csv = os.path.join(self.project_path, "cleaned_ruten_data.csv")
         cart_path = os.path.join(self.project_path, "cart.json") # 需要讀取裡面的黑名單設定
 
-        print(f"\n[啟動資料清理模組]...")
+        print("\n[啟動資料清理模組]...")
         # 呼叫 clean_csv.py 並傳入參數
         cmd = [sys.executable, "clean_csv.py", "--input", input_csv, "--output", output_csv, "--cart", cart_path]
         subprocess.check_call(cmd)
@@ -88,7 +90,7 @@ class MainController:
         output_log = os.path.join(self.project_path, "caculate.log")
         output_json = os.path.join(self.project_path, "plan.json")
 
-        print(f"\n[啟動最佳化計算模組]...")
+        print("\n[啟動最佳化計算模組]...")
         # 呼叫 caculator.py 並傳入參數
         cmd = [
             sys.executable, "caculator.py", 

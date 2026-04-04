@@ -16,9 +16,9 @@ app/services/cleaner_service.py - 爬蟲資料清洗服務
 """
 import csv
 import json
+import logging
 import os
 import re
-import logging
 
 # 設定日誌
 logger = logging.getLogger(__name__)

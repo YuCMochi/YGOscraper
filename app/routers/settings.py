@@ -8,6 +8,7 @@ app/routers/settings.py - 全域設定管理 API 路由
 - PUT  /api/settings : 更新全域設定
 """
 from fastapi import APIRouter, HTTPException
+
 from app.schemas import GlobalSettings
 from app.services import storage
 

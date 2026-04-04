@@ -7,15 +7,13 @@ app/services/project_service.py - 專案建立服務
 - 改用 app/services/storage.py 管理預設結構，避免重複定義
 - v0.3.0: 新建專案時從 data/global_settings.json 讀取全域設定
 """
-import os
+import copy
 import datetime
+import json
+import os
 import shutil
 
-from app.services.storage import (
-    DATA_DIR, _DEFAULT_CART, get_global_settings
-)
-import json
-import copy
+from app.services.storage import _DEFAULT_CART, DATA_DIR, get_global_settings
 
 
 class ProjectService:

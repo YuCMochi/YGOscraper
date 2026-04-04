@@ -7,14 +7,15 @@ app/routers/tasks.py - 爬蟲執行與結果讀取的 API 路由
 
 已改為直接 import Service 類別，不再使用 subprocess。
 """
-import os
 import logging
+import os
 
 from fastapi import APIRouter, HTTPException
+
 from app.services import storage
-from app.services.ruten_scraper import RutenScraper
-from app.services.cleaner_service import DataCleaner
 from app.services.calculator_service import PurchaseOptimizer
+from app.services.cleaner_service import DataCleaner
+from app.services.ruten_scraper import RutenScraper
 
 # 設定日誌
 logger = logging.getLogger(__name__)
