@@ -1,0 +1,57 @@
+name: Integration Tests
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # 每日 UTC 00:00
+  workflow_dispatch:
+
+jobs:
+  scraper-smoke-test:
+    name: Scraper Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Run integration tests
+        id: run-tests
+        run: pytest -m integration -v
+        continue-on-error: true
+
+      - name: Create GitHub Issue on failure
+        if: steps.run-tests.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `External API format change detected (${new Date().toISOString().split('T')[0]})`;
+            const body = [
+              '## Integration Test Failure',
+              '',
+              'One or more external API smoke tests failed in the scheduled integration workflow.',
+              '',
+              `**Workflow run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              '',
+              '### Possible causes',
+              '- Konami DB HTML structure changed',
+              '- Ruten API response schema changed',
+              '- salix5 resources unavailable or moved',
+              '',
+              'Please investigate and update the scrapers / integration tests accordingly.',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['integration-failure', 'external-api'],
+            });
+
+      - name: Fail the job if tests failed
+        if: steps.run-tests.outcome == 'failure'
+        run: exit 1
