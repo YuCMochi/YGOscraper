@@ -31,10 +31,10 @@ class TestKonamiScraper:
         assert response.status_code == 200, f"Konami DB returned {response.status_code}"
 
         soup = BeautifulSoup(response.text, "html.parser")
-        # Konami page should have card info section
-        assert soup.find("body") is not None, "Response has no body element"
-        # Check page is not empty / error page
-        assert len(response.text) > 1000, "Konami page content too short — possible format change"
+        card_number_divs = soup.select("div.card_number")
+        assert len(card_number_divs) > 0, (
+            "No div.card_number found — Konami DB page structure may have changed"
+        )
 
 
 @pytest.mark.integration
@@ -45,18 +45,26 @@ class TestRutenScraper:
         Uses the Ruten search endpoint to search for a known YGO card.
         Verifies the response contains product_id, price fields.
         """
-        # Search for a common card to get at least some results
-        search_url = (
-            f"{RUTEN_API_BASE_URL}/search/v3/index.php"
-            "?type=direct&q=%E9%9D%92%E7%9C%BC%E7%99%BD%E9%BE%8D"  # 青眼白龍
-            "&p=1&n=10&sort=prc%2Fasc"
-        )
+        # Use the same endpoint the scraper actually calls
+        search_url = f"{RUTEN_API_BASE_URL}/search/v3/index.php/core/prod"
+        params = {
+            "q": "青眼白龍",
+            "type": "direct",
+            "sort": "rnk/dc",
+            "limit": 10,
+            "offset": 1,
+        }
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            response = await client.get(search_url)
+            response = await client.get(search_url, params=params)
 
         assert response.status_code == 200, f"Ruten API returned {response.status_code}"
 
         data = response.json()
-        assert "Rows" in data or "rows" in data or isinstance(data, list), (
-            f"Ruten API response schema changed. Keys: {list(data.keys()) if isinstance(data, dict) else type(data)}"
+        assert "Rows" in data, (
+            f"Ruten API response missing 'Rows' key — schema may have changed. "
+            f"Got keys: {list(data.keys()) if isinstance(data, dict) else type(data)}"
+        )
+        assert "TotalRows" in data, (
+            f"Ruten API response missing 'TotalRows' key — schema may have changed. "
+            f"Got keys: {list(data.keys())}"
         )

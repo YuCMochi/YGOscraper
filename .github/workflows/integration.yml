@@ -5,6 +5,10 @@ on:
     - cron: "0 0 * * *"  # 每日 UTC 00:00
   workflow_dispatch:
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   scraper-smoke-test:
     name: Scraper Smoke Tests
@@ -28,6 +32,43 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Ensure required labels exist before creating the issue
+            const requiredLabels = [
+              { name: 'integration-failure', color: 'd93f0b', description: 'Scheduled integration test failure' },
+              { name: 'external-api', color: '0075ca', description: 'Related to external API changes' },
+            ];
+            for (const label of requiredLabels) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description,
+                  });
+                }
+              }
+            }
+
+            // Skip if there is already an open integration-failure issue
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'integration-failure',
+              state: 'open',
+            });
+            if (existing.data.length > 0) {
+              console.log(`Open integration-failure issue already exists (#${existing.data[0].number}), skipping.`);
+              return;
+            }
+
             const title = `External API format change detected (${new Date().toISOString().split('T')[0]})`;
             const body = [
               '## Integration Test Failure',
