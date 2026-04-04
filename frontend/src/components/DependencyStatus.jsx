@@ -27,7 +27,7 @@ const DependencyStatus = () => {
         try {
             const res = await api.get('/health/dependencies');
             setStatus(res.data);
-        } catch (err) {
+        } catch {
             setError(true);
         } finally {
             setLoading(false);
