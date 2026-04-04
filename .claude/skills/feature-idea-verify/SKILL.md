@@ -15,6 +15,8 @@ version: 0.1.0
 ### Step 1：讀取「已排程」idea
 
 從 triage 取得所有「🗓️ 已排程」的 idea，並讀取每個 idea 的 Notion 頁面內容，確認：
+
+**若沒有任何「🗓️ 已排程」的 idea，向使用者報告「目前沒有已排程待驗證的 idea」並停止執行。**
 - evaluate 寫的「實作方法」（應在頁面 block 中）
 - plan 寫的「排程記錄」（對應哪個版本、哪些檔案）
 
@@ -104,7 +106,7 @@ params:
 
 **5-3. 在 DEVELOPMENT_PLAN.md 打勾**
 
-將對應 checkbox `- [ ]` 改為 `- [x]`（使用 `multi_replace_file_content`）。
+將對應 checkbox `- [ ]` 改為 `- [x]`（使用 `Edit` 工具，提供足夠的上下文確保唯一匹配）。
 
 ## 常見實作位置速查
 

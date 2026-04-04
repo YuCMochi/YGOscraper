@@ -16,6 +16,8 @@ version: 0.1.0
 
 從 triage 資料或直接查詢取得所有「🧐 待處理」的 idea，並用 `mcp__claude_ai_Notion__notion-fetch` 讀取每個 idea 的頁面內容（properties 與內容一次取得，應已有評估分析）。
 
+**若沒有任何「🧐 待處理」的 idea，向使用者報告「目前沒有待排程的 idea」並停止執行。**
+
 ### Step 2：閱讀現有開發計畫
 
 讀取 `docs/DEVELOPMENT_PLAN.md`，理解：
@@ -61,7 +63,7 @@ version: 0.1.0
 
 **5-1. 更新 DEVELOPMENT_PLAN.md**
 
-在對應版本的 checklist 中新增實作項目（用 `multi_replace_file_content` 精確插入，不要改動現有內容）。
+在對應版本的 checklist 中新增實作項目（用 `Edit` 工具精確插入，提供足夠的上下文確保唯一匹配，不要改動現有內容）。
 
 格式要與現有文件一致（使用相同的 markdown 風格）。
 

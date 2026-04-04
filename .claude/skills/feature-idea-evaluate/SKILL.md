@@ -16,6 +16,8 @@ version: 0.1.0
 
 從 triage 取得的已分類資料中，取出所有狀態為「📥 未開始」的 idea。若直接觸發本 skill，先執行 triage Step 1–2 收集資料。
 
+**若沒有任何「📥 未開始」的 idea，向使用者報告「目前沒有需要評估的 idea」並停止執行。**
+
 對每一個 idea 逐一讀取：
 - 用 `mcp__claude_ai_Notion__notion-fetch` 帶入 page_id，一次取得完整 properties 與頁面內容（不需要額外呼叫）
 
