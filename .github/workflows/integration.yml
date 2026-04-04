@@ -53,6 +53,8 @@ jobs:
                     color: label.color,
                     description: label.description,
                   });
+                } else {
+                  throw e;
                 }
               }
             }
