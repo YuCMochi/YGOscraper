@@ -8,7 +8,7 @@ import logging
 from typing import List
 
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.config import (
@@ -41,6 +41,11 @@ class HealthCheckResponse(BaseModel):
     """整體健康檢查回應"""
     all_ok: bool                        # 是否全部正常
     results: List[DependencyStatus]     # 各依賴的檢查結果
+
+
+class VersionResponse(BaseModel):
+    """版本號回應"""
+    version: str
 
 
 # ============================================================
@@ -81,6 +86,12 @@ async def _check_one(client: httpx.AsyncClient, dep: dict) -> DependencyStatus:
             ok=False,
             error=str(type(e).__name__),
         )
+
+
+@router.get("/version", response_model=VersionResponse)
+async def get_version(request: Request) -> VersionResponse:
+    """回傳應用程式版本號，從 FastAPI app.version 讀取。"""
+    return VersionResponse(version=request.app.version)
 
 
 @router.get("/health/dependencies", response_model=HealthCheckResponse)
