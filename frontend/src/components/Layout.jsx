@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Settings } from 'lucide-react';
 import GlobalSettingsModal from './GlobalSettingsModal';
 import DependencyStatus from './DependencyStatus';
@@ -8,9 +8,18 @@ import DependencyStatus from './DependencyStatus';
  * ====================
  * 包含左側欄（導航 + 服務狀態）和主要內容區。
  * v0.3.0: 全域設定從側邊欄移至右上角 Modal。
+ * v0.4.1: 版本號改為從 GET /api/version 動態讀取。
  */
 const Layout = ({ children }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [appVersion, setAppVersion] = useState(null);
+
+    useEffect(() => {
+        fetch('/api/version')
+            .then((res) => res.json())
+            .then((data) => setAppVersion(data.version))
+            .catch(() => setAppVersion('—'));
+    }, []);
 
     return (
         <div className="flex h-screen bg-background text-text">
@@ -31,7 +40,7 @@ const Layout = ({ children }) => {
                 {/* 底部：服務狀態 + 版本號 */}
                 <DependencyStatus />
                 <div className="p-4 border-t border-slate-700 text-xs text-text-muted text-center">
-                    v0.4.1
+                    {appVersion != null ? `v${appVersion}` : '—'}
                 </div>
             </aside>
 

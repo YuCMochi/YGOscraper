@@ -5,8 +5,8 @@
 
 ## 2. 前端：動態讀取版本號
 
-- [ ] 2.1 更新 `frontend/package.json` 的 `version`：`"2.0.0"` → `"0.0.0"`
-- [ ] 2.2 修改 `frontend/src/components/Layout.jsx`：移除 hard-coded `v0.4.1`，改以 `useEffect` + `useState` 呼叫 `GET /api/version`，失敗時顯示 `"—"`
+- [x] 2.1 更新 `frontend/package.json` 的 `version`：`"2.0.0"` → `"0.0.0"`
+- [x] 2.2 修改 `frontend/src/components/Layout.jsx`：移除 hard-coded `v0.4.1`，改以 `useEffect` + `useState` 呼叫 `GET /api/version`，失敗時顯示 `"—"`
 
 ## 3. 文件更新
 
