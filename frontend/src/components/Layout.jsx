@@ -16,8 +16,11 @@ const Layout = ({ children }) => {
 
     useEffect(() => {
         fetch('/api/version')
-            .then((res) => res.json())
-            .then((data) => setAppVersion(data.version))
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then((data) => setAppVersion(data.version ?? '—'))
             .catch(() => setAppVersion('—'));
     }, []);
 

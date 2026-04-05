@@ -47,3 +47,17 @@ class TestHealthEndpoint:
         assert "all_ok" in data
         assert "results" in data
         assert isinstance(data["results"], list)
+
+    async def test_version_returns_current_version(self, client):
+        """GET /api/version 回傳 server.py 設定的版本號"""
+        response = await client.get("/api/version")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["version"] == "0.4.1"
+
+    async def test_version_response_has_version_field(self, client):
+        """GET /api/version 回應必須包含 version 欄位（schema contract）"""
+        response = await client.get("/api/version")
+        data = response.json()
+        assert "version" in data
+        assert isinstance(data["version"], str)

@@ -43,6 +43,11 @@ class HealthCheckResponse(BaseModel):
     results: List[DependencyStatus]     # 各依賴的檢查結果
 
 
+class VersionResponse(BaseModel):
+    """版本號回應"""
+    version: str
+
+
 # ============================================================
 # 要檢查的外部服務清單
 # ============================================================
@@ -83,10 +88,10 @@ async def _check_one(client: httpx.AsyncClient, dep: dict) -> DependencyStatus:
         )
 
 
-@router.get("/version")
-async def get_version(request: Request):
+@router.get("/version", response_model=VersionResponse)
+async def get_version(request: Request) -> VersionResponse:
     """回傳應用程式版本號，從 FastAPI app.version 讀取。"""
-    return {"version": request.app.version}
+    return VersionResponse(version=request.app.version)
 
 
 @router.get("/health/dependencies", response_model=HealthCheckResponse)
