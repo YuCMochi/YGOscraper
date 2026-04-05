@@ -1,7 +1,7 @@
 ## 1. 後端：確立版本號真相來源
 
-- [ ] 1.1 更新 `server.py` 的 `version` 參數：`"0.3.0"` → `"0.4.1"`
-- [ ] 1.2 在 `app/routers/health.py` 新增 `GET /api/version` endpoint，從 `request.app.version` 讀取並回傳 `{"version": "x.x.x"}`
+- [x] 1.1 更新 `server.py` 的 `version` 參數：`"0.3.0"` → `"0.4.1"`
+- [x] 1.2 在 `app/routers/health.py` 新增 `GET /api/version` endpoint，從 `request.app.version` 讀取並回傳 `{"version": "x.x.x"}`
 
 ## 2. 前端：動態讀取版本號
 

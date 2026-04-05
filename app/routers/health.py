@@ -8,7 +8,7 @@ import logging
 from typing import List
 
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.config import (
@@ -81,6 +81,12 @@ async def _check_one(client: httpx.AsyncClient, dep: dict) -> DependencyStatus:
             ok=False,
             error=str(type(e).__name__),
         )
+
+
+@router.get("/version")
+async def get_version(request: Request):
+    """回傳應用程式版本號，從 FastAPI app.version 讀取。"""
+    return {"version": request.app.version}
 
 
 @router.get("/health/dependencies", response_model=HealthCheckResponse)
