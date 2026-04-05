@@ -15,5 +15,5 @@
 
 ## 4. Git Tag
 
-- [ ] 4.1 執行 `git tag -a v0.4.1 -m "Release v0.4.1"` 補打目前 HEAD 的 annotated tag
-- [ ] 4.2 確認 tag 正確：`git show v0.4.1` 應顯示 tag 訊息與指向的 commit
+- [x] 4.1 執行 `git tag -a v0.4.1 -m "Release v0.4.1"` 補打目前 HEAD 的 annotated tag
+- [x] 4.2 確認 tag 正確：`git show v0.4.1` 應顯示 tag 訊息與指向的 commit
