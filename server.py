@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 # ============================================================
 app = FastAPI(
     title="YGOscraper API",
-    version="0.4.1",
+    version="0.4.2",
     description="遊戲王卡片採購最佳化工具的後端 API",
     lifespan=lifespan,
 )

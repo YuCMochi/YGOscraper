@@ -8,7 +8,7 @@ import DependencyStatus from './DependencyStatus';
  * ====================
  * 包含左側欄（導航 + 服務狀態）和主要內容區。
  * v0.3.0: 全域設定從側邊欄移至右上角 Modal。
- * v0.4.1: 版本號改為從 GET /api/version 動態讀取。
+ * v0.4.2: 版本號改為從 GET /api/version 動態讀取。
  */
 const Layout = ({ children }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
