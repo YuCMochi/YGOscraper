@@ -1,4 +1,4 @@
-# ⚡ YGO Scraper v0.3.0
+# ⚡ YGO Scraper v0.4.1
 
 遊戲王卡片最低價格採購優化工具。從露天拍賣 (Ruten) 自動搜尋、比價，計算出最划算的購買方案。
 
@@ -189,6 +189,9 @@ YGOscraper/
 
 | 版本 | 說明 |
 |------|------|
+| **v0.4.1** | 版本號統一管理：`server.py` 為單一真相來源，前端動態讀取 `/api/version` |
+| **v0.4.0** | 設定頁面重構：全域設定從側邊欄移至右上角 Modal |
+| **v0.3.1** | CI/CD Pipeline：GitHub Actions TDD + Lint 自動化 |
 | **v0.3.0** | 全域設定 UI 面板、獨立 `global_settings.json`、外部依賴健康檢查、版本號同步 |
 | **v0.2.1** | ResultsPage 白畫面修復、API 錯誤處理（ApiErrorBanner）、前端架構梳理完成 |
 | **v0.2.0** | 後端架構重構完成：Service 模組化、API 路由拆分、Pydantic Schema、外部 URL 集中管理 |
