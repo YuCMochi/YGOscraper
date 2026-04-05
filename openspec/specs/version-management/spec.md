@@ -19,9 +19,9 @@
 專案 SHALL 在每個里程碑版本完成時打上對應的 annotated git tag，格式為 `v<major>.<minor>.<patch>`。
 
 #### Scenario: Annotated tag exists for current version
-- **WHEN** 執行 `git tag -l "v0.4.1"`
-- **THEN** 輸出包含 `v0.4.1`
+- **WHEN** 執行 `git tag -l "v<current_version>"`
+- **THEN** 輸出包含對應版本的 tag
 
 #### Scenario: Tag contains release message
-- **WHEN** 執行 `git show v0.4.1`
+- **WHEN** 執行 `git show v<current_version>`
 - **THEN** 輸出包含 tag 訊息（非 lightweight tag）
