@@ -20,8 +20,8 @@ const Layout = ({ children }) => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
             })
-            .then((data) => setAppVersion(data.version ?? '—'))
-            .catch(() => setAppVersion('—'));
+            .then((data) => setAppVersion(data.version ?? null))
+            .catch(() => setAppVersion(null));
     }, []);
 
     return (
