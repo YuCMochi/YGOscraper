@@ -21,7 +21,7 @@ from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from app.config import RUTEN_API_BASE_URL, RUTEN_IMAGE_BASE_URL
+from app.config import RUTEN_API_BASE_URL, RUTEN_BASE_URL, RUTEN_IMAGE_BASE_URL
 
 # 設定日誌
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class RutenScraper:
                 "User-Agent": self.ua.random,
                 "Accept": "application/json",
                 "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-                "Referer": "https://www.ruten.com.tw/",
+                "Referer": f"{RUTEN_BASE_URL}/",
                 "Connection": "keep-alive",
             }
         except Exception as e:
@@ -92,7 +92,7 @@ class RutenScraper:
                 "User-Agent": DEFAULT_USER_AGENT,
                 "Accept": "application/json",
                 "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-                "Referer": "https://www.ruten.com.tw/",
+                "Referer": f"{RUTEN_BASE_URL}/",
                 "Connection": "keep-alive",
             }
 

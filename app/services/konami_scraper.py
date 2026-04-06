@@ -16,7 +16,7 @@ from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from app.config import KONAMI_DB_BASE_URL
+from app.config import KONAMI_DB_BASE_URL, KONAMI_REFERER_URL
 
 # 設定日誌格式，方便追蹤程式執行狀況與錯誤
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class KonamiScraper:
                 "User-Agent": self.ua.random,
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
-                "Referer": "https://www.db.yugioh-card.com/",
+                "Referer": KONAMI_REFERER_URL,
                 "Connection": "keep-alive",
                 "Upgrade-Insecure-Requests": "1",
             }
