@@ -12,9 +12,11 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.config import (
+    CARD_IMAGE_BASE_URL,
     CARDS_CDB_URL,
     CID_TABLE_URL,
     KONAMI_DB_BASE_URL,
+    RUTEN_API_BASE_URL,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,11 +57,11 @@ _DEPENDENCIES = [
     {"name": "salix5 CID 對照表", "url": CID_TABLE_URL},
     # CARD_IMAGE_BASE_URL 是目錄路徑（trailing slash），對目錄發 HEAD 會回 404
     # 改用已知存在的卡圖檔案作為 probe URL
-    {"name": "salix5 卡圖", "url": "https://raw.githubusercontent.com/salix5/query-data/refs/heads/master/pics/89631139.jpg"},
+    {"name": "salix5 卡圖", "url": f"{CARD_IMAGE_BASE_URL}89631139.jpg"},
     {"name": "Konami 官方 DB", "url": KONAMI_DB_BASE_URL},
     # RUTEN_API_BASE_URL 是 base URL，對它發 HEAD 會回 404/405
     # 改用實際可回應的 search endpoint 作為 probe URL
-    {"name": "露天拍賣 API", "url": "https://rtapi.ruten.com.tw/api/search/v3/index.php/core/prod?q=test&limit=1"},
+    {"name": "露天拍賣 API", "url": f"{RUTEN_API_BASE_URL}/search/v3/index.php/core/prod?q=test&limit=1"},
 ]
 
 
