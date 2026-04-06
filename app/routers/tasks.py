@@ -12,6 +12,7 @@ import os
 
 from fastapi import APIRouter, HTTPException
 
+from app.config import RUTEN_BASE_URL
 from app.services import storage
 from app.services.calculator_service import PurchaseOptimizer
 from app.services.cleaner_service import DataCleaner
@@ -144,7 +145,7 @@ async def get_results(project_name: str):
                 "name": item.get("product_name", ""),
                 # 用 product_id 組合露天商品頁面網址
                 "url": (
-                    f"https://www.ruten.com.tw/item/show?{product_id}"
+                    f"{RUTEN_BASE_URL}/item/show?{product_id}"
                     if product_id
                     else ""
                 ),
