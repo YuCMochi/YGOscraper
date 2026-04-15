@@ -50,6 +50,9 @@ RUTEN_IMAGE_BASE_URL = "https://gcs.rimg.com.tw"
 # 露天拍賣網站 Base URL（商品頁面、Referer 用）
 RUTEN_BASE_URL = "https://www.ruten.com.tw"
 
+# 露天拍賣 items API Base URL（商品詳細選項查詢用）
+RUTEN_ITEMS_API_BASE_URL = "https://rapi.ruten.com.tw/api"
+
 # ============================================================
 # Konami 官方資料庫（Referer 用）
 # ============================================================

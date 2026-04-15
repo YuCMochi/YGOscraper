@@ -166,7 +166,7 @@ class DataCleaner:
                         pass  # 價格不是數字就保留
 
                     # 過濾 3: 有價差的商品（多種規格，爬蟲無法確定是哪種）
-                    if row.get("alt_price") == "1":
+                    if row.get("alt_price") == "True":
                         continue
 
                     product_name = row.get("product_name", "")

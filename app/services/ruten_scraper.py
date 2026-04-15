@@ -21,7 +21,12 @@ from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from app.config import RUTEN_API_BASE_URL, RUTEN_BASE_URL, RUTEN_IMAGE_BASE_URL
+from app.config import (
+    RUTEN_API_BASE_URL,
+    RUTEN_BASE_URL,
+    RUTEN_IMAGE_BASE_URL,
+    RUTEN_ITEMS_API_BASE_URL,
+)
 
 # 設定日誌
 logger = logging.getLogger(__name__)
@@ -173,13 +178,11 @@ class RutenScraper:
                 else 0
             )
 
-            alt_price = 0
-            if (
-                price_range
+            alt_price = (
+                bool(price_range)
                 and len(price_range) > 1
                 and price_range[0] != price_range[-1]
-            ):
-                alt_price = 1
+            )
 
             shipping_cost = product.get("ShippingCost")
             shipping_cost = int(shipping_cost) if shipping_cost is not None else 0
@@ -187,19 +190,70 @@ class RutenScraper:
             image_url = product.get("Image", "")
 
             return {
-                "商品ID": product.get("ProdId", ""),
-                "商品名稱": product.get("ProdName", ""),
-                "賣家ID": product.get("SellerId", ""),
-                "價格": price,
-                "是否有價差": alt_price,
-                "剩餘數量": remaining_stock,
-                "最低運費": shipping_cost,
-                "上架時間": product.get("PostTime", ""),
-                "圖片連結": image_url,
+                "product_id": product.get("ProdId", ""),
+                "product_name": product.get("ProdName", ""),
+                "seller_id": product.get("SellerId", ""),
+                "price": price,
+                "alt_price": alt_price,
+                "stock_qty": remaining_stock,
+                "shipping_cost": shipping_cost,
+                "post_time": product.get("PostTime", ""),
+                "image_url": image_url,
             }
         except Exception as e:
             logger.error(f"處理商品資料時發生錯誤：{e}")
             return None
+
+    async def _fetch_item_detail_async(self, product_id: str) -> dict | None:
+        """[非同步] 取得單一商品的 items/v2 level=detail 資料（含各選項的獨立庫存與價格）"""
+        url = f"{RUTEN_ITEMS_API_BASE_URL}/items/v2/list"
+        params = {"gno": product_id, "level": "detail"}
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(
+                    url,
+                    params=params,
+                    headers=self._get_headers(),
+                    timeout=DEFAULT_TIMEOUT,
+                ) as response:
+                    result = await response.json()
+                    data = result.get("data", [])
+                    return data[0] if data else None
+            except Exception as e:
+                logger.warning(f"取得商品 {product_id} 的選項詳情失敗: {e}")
+                return None
+
+    def _expand_variants(self, parent: Dict, item_detail: dict) -> List[Dict]:
+        """
+        將 items/v2 level=detail 的 spec_info.specs 展開為多筆獨立商品資料列。
+        每筆子商品繼承父商品的 seller_id、image_url、post_time、search_card_name，
+        以自己的 spec_price、spec_num 覆蓋，alt_price 設為 False。
+        回傳空列表表示無法展開（應保留原始資料列）。
+        """
+        specs = item_detail.get("spec_info", {}).get("specs", {})
+        if not specs:
+            return []
+
+        variants = []
+        for spec_id, spec in specs.items():
+            if spec.get("spec_status") != "Y":
+                continue
+            variant = {
+                "product_id": f"{parent['product_id']}_{spec_id}",
+                "product_name": f"{parent['product_name']} [{spec['spec_name']}]",
+                "seller_id": parent["seller_id"],
+                "price": int(spec.get("spec_price", 0)),
+                "alt_price": False,
+                "stock_qty": int(spec.get("spec_num", 0)),
+                "shipping_cost": parent["shipping_cost"],
+                "post_time": parent["post_time"],
+                "image_url": parent["image_url"],
+            }
+            if "search_card_name" in parent:
+                variant["search_card_name"] = parent["search_card_name"]
+            variants.append(variant)
+        return variants
 
     async def _process_products_async(
         self, keyword: str, max_pages: int = 999
@@ -234,6 +288,7 @@ class RutenScraper:
                     break
 
                 # 多工處理資料轉換
+                page_products = []
                 with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_REQUESTS) as executor:
                     futures = [
                         executor.submit(self._extract_product_data, product)
@@ -242,7 +297,22 @@ class RutenScraper:
                     for future in as_completed(futures):
                         product_data = future.result()
                         if product_data:
-                            all_products.append(product_data)
+                            page_products.append(product_data)
+
+                # 對有複數選項的商品展開選項
+                for product in page_products:
+                    if not product.get("alt_price"):
+                        all_products.append(product)
+                        continue
+                    item_detail = await self._fetch_item_detail_async(product["product_id"])
+                    variants = self._expand_variants(product, item_detail) if item_detail else []
+                    if variants:
+                        all_products.extend(variants)
+                    else:
+                        logger.warning(
+                            f"商品 {product.get('product_id')} 選項展開失敗，保留原始資料列"
+                        )
+                        all_products.append(product)
 
                 # 如果這頁不滿，代表沒有下一頁了
                 if len(search_result["Rows"]) < ITEMS_PER_PAGE:
@@ -269,20 +339,6 @@ class RutenScraper:
 
         try:
             df = pd.DataFrame(data)
-            # 將中文欄位名稱轉換為英文
-            df = df.rename(
-                columns={
-                    "商品ID": "product_id",
-                    "商品名稱": "product_name",
-                    "賣家ID": "seller_id",
-                    "價格": "price",
-                    "是否有價差": "alt_price",
-                    "剩餘數量": "stock_qty",
-                    "最低運費": "shipping_cost",
-                    "上架時間": "post_time",
-                    "圖片連結": "image_url",
-                }
-            )
 
             # 調整欄位順序，把 'search_card_name' 移到最前面
             cols = df.columns.tolist()
