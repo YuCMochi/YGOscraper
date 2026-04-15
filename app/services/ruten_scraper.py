@@ -21,7 +21,12 @@ from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from app.config import RUTEN_API_BASE_URL, RUTEN_BASE_URL, RUTEN_IMAGE_BASE_URL, RUTEN_ITEMS_API_BASE_URL
+from app.config import (
+    RUTEN_API_BASE_URL,
+    RUTEN_BASE_URL,
+    RUTEN_IMAGE_BASE_URL,
+    RUTEN_ITEMS_API_BASE_URL,
+)
 
 # 設定日誌
 logger = logging.getLogger(__name__)
